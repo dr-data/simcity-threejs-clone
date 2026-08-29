@@ -26,8 +26,8 @@ echo "==> Building frontend (API: ${VITE_API_URL:-$WORKER_URL})..."
 export VITE_API_URL="${VITE_API_URL:-$WORKER_URL}"
 npm run build
 
-echo "==> Deploying Pages..."
-npx wrangler pages deploy dist --project-name=classroom-simcity --commit-dirty=true
+echo "==> Deploying Pages (production)..."
+npx wrangler pages deploy dist --project-name=classroom-simcity --branch=main --commit-dirty=true
 
 echo ""
 echo "Done!"

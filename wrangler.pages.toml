@@ -1,3 +1,8 @@
-# Cloudflare Pages config (separate from Worker wrangler.toml)
+# Reference only — Cloudflare Pages deploy does not support a separate wrangler config path.
+# Worker API config lives in wrangler.toml (no pages_build_output_dir).
+# Deploy frontend with:
+#   npm run build
+#   npx wrangler pages deploy dist --project-name=classroom-simcity --branch=main
+
 name = "classroom-simcity"
 pages_build_output_dir = "dist"

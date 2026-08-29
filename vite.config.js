@@ -1,15 +1,25 @@
 export default {
-  // Set the base directory for GitHub pages
-  base: '/simcity-threejs-clone/',
-
-  // Set the project root directory (relative to the config file)
+  base: process.env.VITE_BASE || '/',
   root: './src',
-
-  // Set the directory to serve static files from (relative to the root)
   publicDir: './public',
-  
-  // Set the build output directory
   build: {
-    outDir: './dist'
-  }
-}
+    outDir: '../dist',
+    emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: './src/index.html',
+        login: './src/login.html',
+        leaderboard: './src/leaderboard.html',
+        admin: './src/admin.html',
+      },
+    },
+  },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8787',
+        changeOrigin: true,
+      },
+    },
+  },
+};

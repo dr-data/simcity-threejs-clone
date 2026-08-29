@@ -34,6 +34,9 @@ export class Zone extends Building {
       case DevelopmentState.undeveloped:
         modelName = 'under-construction';
         break;
+      case DevelopmentState.damaged:
+        modelName = 'under-construction';
+        break;
       default:
         modelName = `${this.type}-${this.style}${this.development.level}`;
         break;

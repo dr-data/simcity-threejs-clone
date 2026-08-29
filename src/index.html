@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Classroom SimCity</title>
   <link rel="stylesheet" href="/main.css">
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <script type="module" src="./scripts/game.js"></script>
@@ -11,22 +13,57 @@
 
 <body>
   <div id="root-window">
-    <!-- Three.js adds a `canvas` element to this element-->
     <div id="render-target"></div>
+
+    <div id="disaster-overlay"></div>
+
     <div id="loading" class="text-overlay">
-      <div>
-        LOADING...
-      </div>
+      <div>LOADING...</div>
     </div>
     <div id="paused-text" class="text-overlay" style="visibility: hidden;">
-      <div>
-        PAUSED
+      <div>PAUSED</div>
+    </div>
+
+    <div id="disaster-message" class="banner-message"></div>
+    <div id="milestone-badge" class="banner-message milestone"></div>
+    <div id="toast" class="banner-message toast"></div>
+
+  <!-- Tutorial overlay -->
+    <div id="tutorial-overlay" class="modal-overlay" style="display: none;">
+      <div class="modal-panel">
+        <h2>Quick Start (30 sec)</h2>
+        <p><strong>Zones:</strong> Residential houses people, Commercial provides jobs/shops, Industrial produces goods.</p>
+        <p><strong>Power:</strong> Place power plants and connect with power lines — zones need power to develop.</p>
+        <p><strong>Roads:</strong> Buildings need road access to grow.</p>
+        <p><strong>Disasters:</strong> Random events damage zones. Plan for resilience!</p>
+        <p><strong>Controls:</strong> Left-click build, Right-drag rotate, Ctrl+Right pan, Scroll zoom. Touch: drag to rotate.</p>
+        <button class="action-btn" onclick="ui.hideTutorial()">Start Building!</button>
       </div>
     </div>
+
+    <!-- End screen -->
+    <div id="end-screen" class="modal-overlay" style="display: none;">
+      <div class="modal-panel end-panel">
+        <h2>Session Complete!</h2>
+        <div class="end-stats">
+          <div><span>Score</span><strong id="end-score">0</strong></div>
+          <div><span>Residents</span><strong id="end-residents">0</strong></div>
+          <div><span>Developed Zones</span><strong id="end-zones">0</strong></div>
+          <div><span>Resilience</span><strong id="end-resilience">0%</strong></div>
+        </div>
+        <h3>Reflection</h3>
+        <ul id="reflection-prompts" class="reflection-list"></ul>
+        <div class="end-actions">
+          <a href="?quick=1" class="action-btn">Play Again</a>
+          <a href="/leaderboard.html" class="action-btn secondary">View Leaderboard</a>
+        </div>
+      </div>
+    </div>
+
     <div id="ui">
       <div id="title-bar">
         <div class="title-bar-left-items title-bar-items">
-          $1000
+          <span id="budget-counter">$5000</span>
         </div>
         <div class="title-bar-center-items title-bar-items">
           <span id="city-name">My City</span>
@@ -34,57 +71,107 @@
           <span id="sim-time">1/1/2023</span>
         </div>
         <div class="title-bar-right-items title-bar-items">
-          <img id="population-icon" src="/icons/person.png">
+          <img id="population-icon" src="/icons/person.png" alt="">
           <span id="population-counter">0</span>
         </div>
       </div>
+
+      <nav id="top-nav">
+        <a href="/login.html" id="nav-login">Login</a>
+        <span id="nav-user">Guest</span>
+        <a href="/leaderboard.html">Leaderboard</a>
+        <a href="/admin.html" id="nav-admin" style="display:none">Admin</a>
+        <a href="#" onclick="document.getElementById('help-panel').style.display='block';return false;">Help</a>
+      </nav>
+
+      <div id="stats-panel" class="container">
+        <div class="stat-row"><span>Residents</span><span id="stat-residents">0</span></div>
+        <div class="stat-row"><span>Developed Zones</span><span id="stat-zones">0</span></div>
+        <div class="stat-row"><span>Power</span><span id="stat-power">0/0 kW</span></div>
+        <div class="stat-row"><span>Resilience</span><span id="stat-resilience">100%</span></div>
+        <div class="stat-row time-row"><span>Time Left</span><span id="stat-time">15:00</span></div>
+      </div>
+
+      <div id="view-buttons" class="container view-bar">
+        <button class="view-btn" onclick="ui.onCameraView('top')">Top</button>
+        <button class="view-btn" onclick="ui.onCameraView('isometric')">Iso</button>
+        <button class="view-btn" onclick="ui.onCameraView('street')">Street</button>
+        <button class="view-btn" onclick="ui.onCameraView('orbit')">Orbit</button>
+      </div>
+
       <div id="ui-toolbar" class="container">
-        <button id='button-select' class="ui-button selected" data-type="select"
-          onclick="ui.onToolSelected(event)">
-          <img class="toolbar-icon" src="/icons/select-color.png">
+        <button id="button-select" class="ui-button selected" data-type="select" onclick="ui.onToolSelected(event)">
+          <img class="toolbar-icon" src="/icons/select-color.png" alt="Select">
         </button>
-        <button id='button-bulldoze' class="ui-button" data-type="bulldoze"
-          onclick="ui.onToolSelected(event)">
-          <img class="toolbar-icon" src="/icons/bulldozer-color.png">
+        <button id="button-bulldoze" class="ui-button" data-type="bulldoze" onclick="ui.onToolSelected(event)">
+          <img class="toolbar-icon" src="/icons/bulldozer-color.png" alt="Bulldoze">
         </button>
-        <button id='button-residential' class="ui-button" data-type="residential"
-          onclick="ui.onToolSelected(event)">
-          <img class="toolbar-icon" src="/icons/house-color.png">
+        <button id="button-residential" class="ui-button" data-type="residential" onclick="ui.onToolSelected(event)">
+          <img class="toolbar-icon" src="/icons/house-color.png" alt="Residential">
         </button>
-        <button id='button-commercial' class="ui-button" data-type="commercial"
-          onclick="ui.onToolSelected(event)">
-          <img class="toolbar-icon" src="/icons/store-color.png">
+        <button id="button-commercial" class="ui-button" data-type="commercial" onclick="ui.onToolSelected(event)">
+          <img class="toolbar-icon" src="/icons/store-color.png" alt="Commercial">
         </button>
-        <button id='button-industrial' class="ui-button" data-type="industrial"
-          onclick="ui.onToolSelected(event)">
-          <img class="toolbar-icon" src="/icons/factory-color.png">
+        <button id="button-industrial" class="ui-button" data-type="industrial" onclick="ui.onToolSelected(event)">
+          <img class="toolbar-icon" src="/icons/factory-color.png" alt="Industrial">
         </button>
-        <button id='button-road' class="ui-button" data-type="road"
-          onclick="ui.onToolSelected(event)">
-          <img class="toolbar-icon" src="/icons/road-color.png">
+        <button id="button-road" class="ui-button" data-type="road" onclick="ui.onToolSelected(event)">
+          <img class="toolbar-icon" src="/icons/road-color.png" alt="Road">
         </button>
-        <button id='button-power-plant' class="ui-button" data-type="power-plant"
-          onclick="ui.onToolSelected(event)">
-          <img class="toolbar-icon" src="/icons/power-color.png">
+        <button id="button-power-plant" class="ui-button" data-type="power-plant" onclick="ui.onToolSelected(event)">
+          <img class="toolbar-icon" src="/icons/power-color.png" alt="Power plant">
         </button>
-        <button id='button-power-line' class="ui-button" data-type="power-line"
-        onclick="ui.onToolSelected(event)">
-        <img class="toolbar-icon" src="/icons/power-line-color.png">
-      </button>
-        <button id='button-pause' class="ui-button" onclick="ui.togglePause()">
-          <img id='pause-button-icon' class="toolbar-icon" src="/icons/pause-color.png">
+        <button id="button-power-line" class="ui-button" data-type="power-line" onclick="ui.onToolSelected(event)">
+          <img class="toolbar-icon" src="/icons/power-line-color.png" alt="Power line">
+        </button>
+        <button id="button-pause" class="ui-button" onclick="ui.togglePause()">
+          <img id="pause-button-icon" class="toolbar-icon" src="/icons/pause-color.png" alt="Pause">
+        </button>
+        <button id="button-god" class="ui-button" onclick="ui.toggleGodMode()" title="GOD Mode">
+          <span class="god-icon">GOD</span>
+        </button>
+        <button id="button-disaster" class="ui-button" onclick="ui.onDisaster()" title="Trigger Disaster">
+          <span class="god-icon">⚡</span>
         </button>
       </div>
-      <div id="info-panel" class="container">
+
+      <div id="action-bar" class="container action-bar">
+        <select id="template-select" onchange="ui.onTemplateChange(event)"></select>
+        <button class="action-btn small" onclick="ui.onSaveCity()">Save</button>
+        <button class="action-btn small" onclick="ui.onLoadCity()">Load</button>
+        <button class="action-btn small" onclick="ui.onResetCity()">Reset</button>
+        <button class="action-btn small" onclick="window.cheatConsole?.toggle()">Console</button>
       </div>
+
+      <div id="info-panel" class="container"></div>
+
       <div id="instructions">
-        INTERACT - Left Mouse<br>
-        ROTATE - Right Mouse<br>
-        PAN - Control + Right Mouse<br>
-        ZOOM - Scroll
+        BUILD - Left Click / Tap<br>
+        ROTATE - Right Drag / Touch Drag<br>
+        PAN - Ctrl + Right Drag<br>
+        ZOOM - Scroll<br>
+        CHEATS - Press /
       </div>
-      <div id="version">
-        v0.3.0
+
+      <div id="version">Classroom SimCity v1.0</div>
+    </div>
+
+    <div id="cheat-console">
+      <div id="cheat-output">Type help for commands</div>
+      <input id="cheat-input" type="text" placeholder="Enter command..." autocomplete="off">
+    </div>
+
+    <div id="help-panel" class="modal-overlay" style="display:none" onclick="this.style.display='none'">
+      <div class="modal-panel" onclick="event.stopPropagation()">
+        <h2>Strategy Tips</h2>
+        <ul>
+          <li>Balance RCI zones — residents need jobs and shops nearby.</li>
+          <li>Connect power plants to zones with power lines.</li>
+          <li>Roads must touch zone edges for development.</li>
+          <li>Spread zones to reduce disaster damage concentration.</li>
+          <li>Trade-off: industrial growth vs. resilience and sustainability.</li>
+        </ul>
+        <button class="action-btn" onclick="document.getElementById('help-panel').style.display='none'">Close</button>
       </div>
     </div>
   </div>

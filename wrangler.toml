@@ -1,0 +1,15 @@
+name = "classroom-simcity-api"
+main = "worker/src/index.js"
+compatibility_date = "2024-01-01"
+
+# D1: relational data for users, stats, sessions, audit logs
+[[d1_databases]]
+binding = "DB"
+database_name = "classroom-simcity"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+[vars]
+ALLOWED_ORIGIN = "https://your-pages-domain.pages.dev"
+DEV_MODE = "false"
+
+# Set SESSION_SECRET via: wrangler secret put SESSION_SECRET

@@ -1,15 +1,21 @@
 {
-  "name": "simcity-threejs-clone",
+  "name": "classroom-simcity",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 3000",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "worker:dev": "wrangler dev",
+    "worker:deploy": "wrangler deploy",
+    "db:migrate": "wrangler d1 execute classroom-simcity --file=worker/schema.sql",
+    "db:migrate:local": "wrangler d1 execute classroom-simcity --local --file=worker/schema.sql",
+    "seed-admin": "node scripts/seed-admin.js"
   },
   "devDependencies": {
-    "vite": "^4.4.5"
+    "vite": "^4.4.5",
+    "wrangler": "^3.90.0"
   },
   "dependencies": {
     "three": "^0.155.0"

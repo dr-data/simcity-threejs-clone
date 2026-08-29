@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Classroom SimCity</title>
+  <link rel="stylesheet" href="/main.css">
+</head>
+<body class="page-body">
+  <div class="page-container">
+    <h1>Classroom SimCity</h1>
+    <p class="subtitle">Sign in to track your progress and compete on the leaderboard.</p>
+
+    <div class="auth-tabs">
+      <button id="tab-login" class="tab active" onclick="showTab('login')">Login</button>
+      <button id="tab-signup" class="tab" onclick="showTab('signup')">Sign Up</button>
+      <button id="tab-reset" class="tab" onclick="showTab('reset')">Reset Password</button>
+    </div>
+
+    <form id="form-login" class="auth-form">
+      <label>Username<input type="text" id="login-username" required></label>
+      <label>Password<input type="password" id="login-password" required></label>
+      <button type="submit" class="action-btn">Log In</button>
+    </form>
+
+    <form id="form-signup" class="auth-form" style="display:none">
+      <label>Username<input type="text" id="signup-username" required minlength="3"></label>
+      <label>Email (optional)<input type="email" id="signup-email"></label>
+      <label>Password<input type="password" id="signup-password" required minlength="6"></label>
+      <button type="submit" class="action-btn">Create Account</button>
+    </form>
+
+    <form id="form-reset" class="auth-form" style="display:none">
+      <label>Email<input type="email" id="reset-email" required></label>
+      <button type="submit" class="action-btn">Request Reset</button>
+      <label>Reset Token<input type="text" id="reset-token" placeholder="From email or dev response"></label>
+      <label>New Password<input type="password" id="reset-password" minlength="6"></label>
+      <button type="button" class="action-btn secondary" onclick="submitReset()">Submit Reset</button>
+    </form>
+
+    <p id="auth-message" class="auth-message"></p>
+    <p><a href="/">← Back to Game</a></p>
+  </div>
+  <script type="module" src="./scripts/pages/login.js"></script>
+</body>
+</html>

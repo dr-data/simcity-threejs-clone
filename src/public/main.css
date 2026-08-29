@@ -231,3 +231,376 @@ h1 {
   justify-content: flex-start;
   gap: 16px;
 }
+
+/* --- Classroom SimCity extensions --- */
+
+#disaster-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s;
+  z-index: 50;
+}
+
+.banner-message {
+  position: fixed;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e2331ee;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  visibility: hidden;
+  z-index: 100;
+  font-size: 1.2em;
+}
+
+.banner-message.milestone {
+  background: #2d6a4f;
+}
+
+.banner-message.toast {
+  bottom: 80px;
+  top: auto;
+  background: #333;
+}
+
+#top-nav {
+  position: fixed;
+  top: 48px;
+  right: 8px;
+  display: flex;
+  gap: 12px;
+  z-index: 90;
+  font-size: 0.9em;
+}
+
+#top-nav a, #top-nav span {
+  color: white;
+  text-decoration: none;
+}
+
+#stats-panel {
+  position: fixed;
+  top: 72px;
+  right: 8px;
+  width: 200px;
+  z-index: 80;
+  font-size: 0.95em;
+  color: white;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 4px 0;
+}
+
+.stat-row.time-row span:last-child {
+  color: #ffcc00;
+  font-size: 1.2em;
+}
+
+.view-bar {
+  position: fixed;
+  bottom: 8px;
+  left: 60px;
+  display: flex;
+  gap: 4px;
+  z-index: 80;
+}
+
+.view-btn, .action-btn {
+  background: #1e2331cd;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9em;
+}
+
+.action-btn.small {
+  padding: 6px 10px;
+  font-size: 0.8em;
+}
+
+.action-btn.secondary {
+  background: #3a5177;
+}
+
+.action-btn.danger {
+  background: #8b2635;
+}
+
+.action-bar {
+  position: fixed;
+  bottom: 8px;
+  right: 8px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  z-index: 80;
+}
+
+.action-bar select {
+  background: #1e2331;
+  color: white;
+  border: none;
+  padding: 6px;
+  border-radius: 4px;
+  font-family: inherit;
+}
+
+.god-icon {
+  color: white;
+  font-size: 0.75em;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.modal-panel {
+  background: #1e2331;
+  color: white;
+  padding: 24px;
+  border-radius: 12px;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-panel h2, .modal-panel h3 {
+  margin-top: 0;
+}
+
+.end-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.end-stats div {
+  background: #00000040;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.end-stats span {
+  display: block;
+  font-size: 0.85em;
+  color: #aaa;
+}
+
+.end-stats strong {
+  font-size: 1.8em;
+}
+
+.end-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.reflection-list {
+  text-align: left;
+  font-size: 0.95em;
+  line-height: 1.5;
+}
+
+#cheat-console {
+  position: fixed;
+  bottom: 60px;
+  left: 60px;
+  width: 320px;
+  background: #000000cc;
+  color: #0f0;
+  padding: 8px;
+  border-radius: 8px;
+  display: none;
+  flex-direction: column;
+  z-index: 150;
+  font-family: monospace;
+  font-size: 0.85em;
+}
+
+#cheat-input {
+  background: #111;
+  color: #0f0;
+  border: 1px solid #333;
+  padding: 6px;
+  margin-top: 4px;
+}
+
+/* Auth / data pages */
+.page-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.page-container {
+  background: #1e2331ee;
+  color: white;
+  padding: 32px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.page-container.wide {
+  max-width: 960px;
+}
+
+.subtitle {
+  text-align: center;
+  color: #aaa;
+  margin-bottom: 20px;
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tab {
+  flex: 1;
+  background: #333;
+  color: white;
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.tab.active {
+  background: #3a5177;
+}
+
+.auth-form label {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.auth-form input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 4px;
+  border: none;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.auth-message {
+  color: #ffcc00;
+  text-align: center;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85em;
+}
+
+.data-table th, .data-table td {
+  padding: 8px;
+  border-bottom: 1px solid #444;
+  text-align: left;
+}
+
+.data-table th {
+  background: #00000040;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  margin-bottom: 24px;
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+
+.clickable-row:hover {
+  background: #ffffff10;
+}
+
+.admin-toolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.admin-toolbar input {
+  flex: 1;
+  min-width: 150px;
+  padding: 8px;
+  border: none;
+  border-radius: 4px;
+}
+
+a {
+  color: #81b1e0;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  #instructions, #version {
+    font-size: 0.7em;
+  }
+
+  #stats-panel {
+    width: 160px;
+    font-size: 0.8em;
+    top: 88px;
+  }
+
+  #ui-toolbar {
+    top: 88px;
+  }
+
+  #info-panel {
+    width: 240px;
+    font-size: 0.85em;
+  }
+
+  .ui-button {
+    height: 44px;
+    width: 44px;
+  }
+
+  .view-bar {
+    left: 52px;
+    bottom: 48px;
+  }
+
+  .action-bar {
+    flex-wrap: wrap;
+    max-width: 60%;
+  }
+
+  .text-overlay {
+    font-size: 3em;
+  }
+
+  #top-nav {
+    font-size: 0.75em;
+    gap: 6px;
+  }
+}

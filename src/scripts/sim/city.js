@@ -5,6 +5,7 @@ import { Tile } from './tile.js';
 import { VehicleGraph } from './vehicles/vehicleGraph.js';
 import { PowerService } from './services/power.js';
 import { SimService } from './services/simService.js';
+import { DevelopmentState } from './buildings/modules/development.js';
 
 export class City extends THREE.Group {
   /**
@@ -80,13 +81,127 @@ export class City extends THREE.Group {
     for (let x = 0; x < this.size; x++) {
       for (let y = 0; y < this.size; y++) {
         const tile = this.getTile(x, y);
-        population += tile.building?.residents?.count ?? 0;
+        const building = tile.building;
+        if (building?.development?.state === DevelopmentState.damaged) continue;
+        population += building?.residents?.count ?? 0;
       }
     }
     return population;
   }
 
-  /** Returns the title at the coordinates. If the coordinates
+  /**
+   * Count of developed (occupied) zones not damaged
+   */
+  getDevelopedZoneCount() {
+    let count = 0;
+    for (let x = 0; x < this.size; x++) {
+      for (let y = 0; y < this.size; y++) {
+        const b = this.getTile(x, y).building;
+        if (
+          b?.development &&
+          b.development.state === DevelopmentState.developed
+        ) {
+          count++;
+        }
+      }
+    }
+    return count;
+  }
+
+  /**
+   * Percentage of zones undamaged (disaster resilience score 0-100)
+   */
+  getDisasterResilience() {
+    let zones = 0;
+    let undamaged = 0;
+    for (let x = 0; x < this.size; x++) {
+      for (let y = 0; y < this.size; y++) {
+        const b = this.getTile(x, y).building;
+        if (
+          b &&
+          [BuildingType.residential, BuildingType.commercial, BuildingType.industrial].includes(
+            b.type
+          )
+        ) {
+          zones++;
+          if (b.development?.state !== DevelopmentState.damaged) {
+            undamaged++;
+          }
+        }
+      }
+    }
+    if (zones === 0) return 100;
+    return Math.round((undamaged / zones) * 100);
+  }
+
+  getPowerStats() {
+    let capacity = 0;
+    let demand = 0;
+    for (let x = 0; x < this.size; x++) {
+      for (let y = 0; y < this.size; y++) {
+        const b = this.getTile(x, y).building;
+        if (b?.type === BuildingType.powerPlant) {
+          capacity += b.powerCapacity ?? 0;
+        }
+        if (b?.power?.required) {
+          demand += b.power.required;
+        }
+      }
+    }
+    return { capacity, demand };
+  }
+
+  getSessionStats() {
+    return {
+      residents: this.population,
+      developedZones: this.getDevelopedZoneCount(),
+      disasterResilience: this.getDisasterResilience(),
+      power: this.getPowerStats(),
+    };
+  }
+
+  serialize() {
+    const buildings = [];
+    for (let x = 0; x < this.size; x++) {
+      for (let y = 0; y < this.size; y++) {
+        const tile = this.getTile(x, y);
+        if (tile.building) {
+          const b = tile.building;
+          const entry = { x, y, type: b.type };
+          if (b.development) {
+            entry.state = b.development.state;
+            entry.level = b.development.level;
+            entry.repairCounter = b.development.repairCounter;
+          }
+          buildings.push(entry);
+        }
+      }
+    }
+    return { size: this.size, name: this.name, simTime: this.simTime, buildings };
+  }
+
+  deserialize(data) {
+    if (!data) return;
+    this.name = data.name || this.name;
+    this.simTime = data.simTime || 0;
+    for (let x = 0; x < this.size; x++) {
+      for (let y = 0; y < this.size; y++) {
+        this.bulldoze(x, y);
+      }
+    }
+    for (const entry of data.buildings || []) {
+      this.placeBuilding(entry.x, entry.y, entry.type);
+      const tile = this.getTile(entry.x, entry.y);
+      if (tile?.building?.development && entry.state) {
+        tile.building.development.state = entry.state;
+        if (entry.level) tile.building.development.level = entry.level;
+        if (entry.repairCounter) tile.building.development.repairCounter = entry.repairCounter;
+        tile.building.refreshView(this);
+      }
+    }
+  }
+
+  /** Returns the tile at the coordinates. If the coordinates
    * are out of bounds, then `null` is returned.
    * @param {number} x The x-coordinate of the tile
    * @param {number} y The y-coordinate of the tile

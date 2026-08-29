@@ -8,6 +8,7 @@ export const DevelopmentState = {
   developed: 'developed',
   underConstruction: 'under-construction',
   undeveloped: 'undeveloped',
+  damaged: 'damaged',
 };
 
 export class DevelopmentModule extends SimModule {
@@ -17,6 +18,12 @@ export class DevelopmentModule extends SimModule {
    * @type {number}
    */
   #abandonmentCounter = 0;
+
+  /**
+   * Counter for repair progress when damaged
+   * @type {number}
+   */
+  repairCounter = 0;
 
   /**
    * Counter for days under construction
@@ -112,6 +119,12 @@ export class DevelopmentModule extends SimModule {
           if (Math.random() < config.modules.development.redevelopChance) {
             this.state = DevelopmentState.developed;
           }
+        }
+        break;
+      case DevelopmentState.damaged:
+        if (++this.repairCounter >= 5) {
+          this.state = DevelopmentState.developed;
+          this.repairCounter = 0;
         }
         break;
     }

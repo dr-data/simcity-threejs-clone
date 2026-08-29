@@ -2,6 +2,14 @@ export default {
   base: process.env.VITE_BASE || '/',
   root: './src',
   publicDir: './public',
+  esbuild: {
+    jsx: 'automatic',
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      jsx: 'automatic',
+    },
+  },
   build: {
     outDir: '../dist',
     emptyOutDir: true,

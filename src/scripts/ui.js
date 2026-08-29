@@ -5,6 +5,8 @@ import pauseIconUrl from '/icons/pause-color.png';
 import gameConfig from './gameConfig.js';
 import { CITY_TEMPLATES } from './templates/cityTemplates.js';
 import { authClient } from './auth/authClient.js';
+import { settingsManager } from './settings/settingsManager.js';
+import { initTutorial, startGuidedTour } from './tutorial/initTutorial.jsx';
 
 export class GameUI {
   activeToolId = 'select';
@@ -131,13 +133,87 @@ export class GameUI {
   }
 
   showTutorial() {
-    const el = document.getElementById('tutorial-overlay');
+    this.maybeShowTutorialWelcome();
+  }
+
+  maybeShowTutorialWelcome() {
+    if (!settingsManager.isTutorialOnStart()) return;
+    if (settingsManager.hasSeenWelcome()) return;
+    const el = document.getElementById('tutorial-welcome');
     if (el) el.style.display = 'flex';
   }
 
+  acceptTutorialWelcome() {
+    document.getElementById('tutorial-welcome').style.display = 'none';
+    this.replayGuidedTour(() => settingsManager.markWelcomeSeen());
+  }
+
+  skipTutorialWelcome() {
+    document.getElementById('tutorial-welcome').style.display = 'none';
+    settingsManager.markWelcomeSeen();
+  }
+
+  replayGuidedTour(onComplete) {
+    document.getElementById('tutorial-welcome').style.display = 'none';
+    initTutorial();
+    startGuidedTour(() => {
+      settingsManager.markWelcomeSeen();
+      onComplete?.();
+    });
+  }
+
+  openSettings() {
+    const panel = document.getElementById('settings-panel');
+    const checkbox = document.getElementById('setting-tutorial-on-start');
+    if (checkbox) checkbox.checked = settingsManager.isTutorialOnStart();
+    if (panel) panel.style.display = 'flex';
+    this.syncTemplateSelects();
+  }
+
+  closeSettings() {
+    const panel = document.getElementById('settings-panel');
+    if (panel) panel.style.display = 'none';
+  }
+
+  onTutorialSettingChange(event) {
+    settingsManager.setTutorialOnStart(event.target.checked);
+    this.showToast(
+      event.target.checked ? 'Tutorial on start enabled' : 'Tutorial on start disabled'
+    );
+  }
+
+  openHelp() {
+    document.getElementById('help-panel').style.display = 'block';
+  }
+
+  closeHelp() {
+    document.getElementById('help-panel').style.display = 'none';
+  }
+
+  toggleMorePanel(forceOpen) {
+    const panel = document.getElementById('more-panel');
+    if (!panel) return;
+    const open = forceOpen === true || forceOpen === false ? forceOpen : !panel.classList.contains('open');
+    panel.classList.toggle('open', open);
+    panel.setAttribute('aria-hidden', open ? 'false' : 'true');
+  }
+
+  syncTemplateSelects() {
+    const main = document.getElementById('template-select');
+    const settings = document.getElementById('settings-template-select');
+    if (main && settings && main.value) {
+      settings.value = main.value;
+    }
+  }
+
+  onSettingsTemplateChange(event) {
+    const main = document.getElementById('template-select');
+    if (main) main.value = event.target.value;
+    this.onTemplateChange(event);
+  }
+
   hideTutorial() {
-    const el = document.getElementById('tutorial-overlay');
-    if (el) el.style.display = 'none';
+    this.skipTutorialWelcome();
   }
 
   showEndScreen(stats) {
@@ -252,13 +328,16 @@ export class GameUI {
   }
 
   populateTemplates() {
-    const select = document.getElementById('template-select');
-    if (!select) return;
-    select.innerHTML = Object.entries(CITY_TEMPLATES)
+    const options = Object.entries(CITY_TEMPLATES)
       .map(([id, t]) => `<option value="${id}">${t.name}</option>`)
       .join('');
+    const select = document.getElementById('template-select');
+    const settingsSelect = document.getElementById('settings-template-select');
+    if (select) select.innerHTML = options;
+    if (settingsSelect) settingsSelect.innerHTML = options;
   }
 }
 
 window.ui = new GameUI();
 window.ui.populateTemplates();
+initTutorial();

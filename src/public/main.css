@@ -62,16 +62,153 @@ h1 {
   padding: 12px;
 }
 
-#ui-toolbar {
+#bottom-dock,
+#game-controls {
+  display: block;
+}
+
+#game-controls {
   position: absolute;
   top: 64px;
-  bottom: 0px;
+  left: 0;
+  bottom: 0;
+  width: 56px;
+  padding: 4px;
+  box-shadow: none;
+  background: transparent;
+}
 
+#game-controls .view-bar {
+  display: none;
+}
+
+#ui-toolbar {
+  position: static;
+  flex-direction: column;
   box-shadow: 0px 0px 1px black;
+}
 
+.nav-icon-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.1em;
+  cursor: pointer;
+  padding: 2px 6px;
+  font-family: inherit;
+}
+
+.dock-more-btn {
+  display: none;
+}
+
+.slide-panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #1e2331f5;
+  color: white;
+  padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+  transform: translateY(100%);
+  transition: transform 0.25s ease;
+  z-index: 96;
+  border-radius: 12px 12px 0 0;
+  max-height: 45vh;
+}
+
+.slide-panel.open {
+  transform: translateY(0);
+}
+
+.slide-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 1.1em;
+}
+
+.action-bar-inner {
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  gap: 10px;
+}
+
+.action-label {
+  font-size: 0.85em;
+  color: #aaa;
+}
+
+.action-btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.action-bar-inner select {
+  width: 100%;
+  background: #121622;
+  color: white;
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  font-family: inherit;
+}
+
+.settings-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 16px 0;
+  font-size: 0.95em;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.settings-toggle input {
+  margin-top: 4px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.settings-hint {
+  font-size: 0.85em;
+  color: #aaa;
+  margin: 0 0 16px;
+}
+
+.settings-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.settings-section {
+  margin-bottom: 16px;
+}
+
+.settings-section h3 {
+  font-size: 1em;
+  margin: 0 0 8px;
+  color: #c8d8f0;
+}
+
+.settings-select {
+  width: 100%;
+  background: #121622;
+  color: white;
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  font-family: inherit;
+  margin-bottom: 8px;
+}
+
+.welcome-panel p {
+  line-height: 1.5;
+  margin-bottom: 16px;
 }
 
 .ui-button {
@@ -312,6 +449,10 @@ h1 {
   z-index: 80;
 }
 
+#view-buttons.view-bar {
+  position: fixed;
+}
+
 .view-btn, .action-btn {
   background: #1e2331cd;
   color: white;
@@ -337,14 +478,10 @@ h1 {
 }
 
 .action-bar {
-  position: fixed;
-  bottom: 8px;
-  right: 8px;
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  z-index: 80;
+  display: none;
 }
+
+/* Desktop: legacy action bar hidden — actions in More panel */
 
 .action-bar select {
   background: #1e2331;
@@ -578,48 +715,254 @@ a {
   color: #81b1e0;
 }
 
-/* Mobile */
-@media (max-width: 768px) {
+/* Mobile & tablet */
+@media (max-width: 900px) {
+  html, body, #root-window {
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
   #instructions, #version {
-    font-size: 0.7em;
-  }
-
-  #stats-panel {
-    width: 160px;
-    font-size: 0.8em;
-    top: 88px;
-  }
-
-  #ui-toolbar {
-    top: 88px;
-  }
-
-  #info-panel {
-    width: 240px;
-    font-size: 0.85em;
-  }
-
-  .ui-button {
-    height: 44px;
-    width: 44px;
-  }
-
-  .view-bar {
-    left: 52px;
-    bottom: 48px;
-  }
-
-  .action-bar {
-    flex-wrap: wrap;
-    max-width: 60%;
+    display: none;
   }
 
   .text-overlay {
-    font-size: 3em;
+    font-size: 2.5em;
+  }
+
+  #title-bar {
+    height: 44px;
+    padding: 4px 8px;
+  }
+
+  .title-bar-items {
+    font-size: 1em;
+  }
+
+  .title-bar-items.title-bar-center-items {
+    font-size: 1.1em;
+  }
+
+  .title-date-sep,
+  #sim-time {
+    display: none;
+  }
+
+  #population-icon {
+    width: 24px;
+    height: 24px;
   }
 
   #top-nav {
+    top: 44px;
+    right: 4px;
+    left: auto;
+    gap: 8px;
     font-size: 0.75em;
-    gap: 6px;
+    flex-wrap: nowrap;
+  }
+
+  #top-nav a {
+    padding: 2px 4px;
+  }
+
+  #stats-panel {
+    top: 44px;
+    right: 4px;
+    left: auto;
+    width: auto;
+    min-width: 118px;
+    max-width: 42vw;
+    padding: 6px 8px;
+    font-size: 0.68em;
+    border-radius: 0 0 8px 8px;
+  }
+
+  .stat-row {
+    margin: 2px 0;
+  }
+
+  .stat-row.time-row span:last-child {
+    font-size: 1em;
+  }
+
+  /* Hide left vertical toolbar on mobile */
+  #ui-toolbar {
+    position: static;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 4px;
+    padding: 0;
+    box-shadow: none;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  #ui-toolbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  #ui-toolbar .ui-button {
+    flex: 0 0 auto;
+    margin: 0;
+    height: 42px;
+    width: 42px;
+    min-width: 42px;
+  }
+
+  #ui-toolbar .toolbar-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  #view-buttons.view-bar {
+    position: static;
+    justify-content: center;
+    gap: 4px;
+    padding: 0;
+    flex-wrap: nowrap;
+  }
+
+  .view-btn {
+    padding: 6px 8px;
+    font-size: 0.72em;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  #game-controls {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 95;
+    width: 100%;
+    padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
+    gap: 4px;
+    background: #1e2331ee;
+    border-radius: 0;
+    pointer-events: auto;
+  }
+
+  #game-controls .view-bar {
+    display: flex;
+    position: static;
+    justify-content: center;
+    gap: 4px;
+    padding: 0;
+    flex-wrap: nowrap;
+  }
+
+  .dock-row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+
+  .toolbar-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .dock-more-btn {
+    display: block;
+    align-self: center;
+    width: 100%;
+    max-width: 120px;
+    margin: 2px auto 0;
+    padding: 6px 16px;
+    background: #3a3f50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.2em;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  #info-panel {
+    top: auto;
+    bottom: calc(148px + env(safe-area-inset-bottom));
+    right: 4px;
+    left: 4px;
+    width: auto;
+    max-height: 32vh;
+    overflow-y: auto;
+  }
+
+  #cheat-console {
+    bottom: calc(160px + env(safe-area-inset-bottom));
+    left: 4px;
+    right: 4px;
+    width: auto;
+  }
+
+  .banner-message {
+    top: 48px;
+    font-size: 0.9em;
+    max-width: 92vw;
+    text-align: center;
+  }
+
+  .banner-message.toast {
+    bottom: calc(160px + env(safe-area-inset-bottom));
+  }
+
+  .modal-panel {
+    max-width: 92vw;
+    padding: 16px;
+  }
+
+  .end-actions {
+    flex-direction: column;
+  }
+
+  .end-actions .action-btn {
+    text-align: center;
+  }
+}
+
+/* Desktop */
+@media (min-width: 901px) {
+  #game-controls {
+    position: absolute;
+    top: 64px;
+    left: 0;
+    bottom: 0;
+    width: 56px;
+    padding: 4px;
+    background: transparent;
+    flex-direction: column;
+  }
+
+  #game-controls .view-bar {
+    display: none;
+  }
+
+  #view-buttons.view-bar {
+    display: flex;
+    position: fixed;
+    bottom: 8px;
+    left: 60px;
+  }
+
+  #ui-toolbar {
+    position: static;
+    flex-direction: column;
+    overflow: visible;
+  }
+
+  #btn-more,
+  .dock-more-btn {
+    display: none !important;
+  }
+
+  #more-panel {
+    display: none !important;
   }
 }

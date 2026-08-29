@@ -93,7 +93,7 @@ export class Game {
     }
 
     if (gameConfig.showTutorial) {
-      window.ui.showTutorial();
+      window.ui.maybeShowTutorialWelcome();
     }
 
     window.disasterManager.onSessionStart(this.city);

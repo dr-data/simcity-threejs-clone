@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "worker:dev": "wrangler dev",
     "worker:deploy": "wrangler deploy",
+    "deploy": "bash scripts/deploy-to-cloudflare.sh",
     "db:migrate": "wrangler d1 execute classroom-simcity --file=worker/schema.sql",
     "db:migrate:local": "wrangler d1 execute classroom-simcity --local --file=worker/schema.sql",
     "seed-admin": "node scripts/seed-admin.js"

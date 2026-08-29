@@ -16,6 +16,12 @@ import {
   sessionCookieHeader,
   clearSessionCookie,
 } from './auth.js';
+import {
+  checkAiQuota,
+  incrementAiQuota,
+  generateTip,
+  generateSessionReview,
+} from './ai.js';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -473,6 +479,82 @@ export default {
           response = json({ ok: true }, 200, corsHeaders);
         } else {
           response = json({ error: 'Not found' }, 404);
+        }
+      } else if (path.startsWith('/api/ai/')) {
+        if (env.AI_ENABLED !== 'true') {
+          response = json({ error: 'AI features disabled' }, 503, corsHeaders);
+        } else if (!checkRateLimit(request, 'ai', 30)) {
+          response = json({ error: 'Too many requests' }, 429, corsHeaders);
+        } else {
+          const user = await getUserFromSession(request, env);
+          const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+          const quota = await checkAiQuota(env, user?.id, ip);
+          if (!quota.allowed) {
+            response = json(
+              { error: 'Daily AI limit reached. Try again tomorrow.', remaining: 0 },
+              429,
+              corsHeaders
+            );
+          } else if (path === '/api/ai/tip' && method === 'POST') {
+            const body = await request.json();
+            const stats = {
+              residents: parseInt(body.residents, 10) || 0,
+              developed_zones: parseInt(body.developed_zones, 10) || 0,
+              disaster_resilience: parseFloat(body.disaster_resilience) || 0,
+              power_capacity: parseInt(body.power_capacity, 10) || 0,
+              power_demand: parseInt(body.power_demand, 10) || 0,
+            };
+            try {
+              const tip = await generateTip(env, stats);
+              await incrementAiQuota(env, user?.id, ip);
+              response = json({ tip, remaining: quota.remaining - 1 }, 200, corsHeaders);
+            } catch (e) {
+              console.error('AI tip error', e);
+              response = json({ error: 'AI temporarily unavailable' }, 503, corsHeaders);
+            }
+          } else if (path === '/api/ai/session-review' && method === 'POST') {
+            const body = await request.json();
+            const stats = {
+              score: parseInt(body.score, 10) || 0,
+              residents: parseInt(body.residents, 10) || 0,
+              developed_zones: parseInt(body.developed_zones, 10) || 0,
+              disaster_resilience: parseFloat(body.disaster_resilience) || 0,
+              disasters_survived: parseInt(body.disasters_survived, 10) || 0,
+            };
+            try {
+              const { questions, report } = await generateSessionReview(env, stats);
+              await incrementAiQuota(env, user?.id, ip);
+              response = json({ questions, report, remaining: quota.remaining - 1 }, 200, corsHeaders);
+            } catch (e) {
+              console.error('AI session review error', e);
+              response = json({ error: 'AI temporarily unavailable' }, 503, corsHeaders);
+            }
+          } else if (
+            (path === '/api/ai/reflection' || path === '/api/ai/mayor-report') &&
+            method === 'POST'
+          ) {
+            const body = await request.json();
+            const stats = {
+              score: parseInt(body.score, 10) || 0,
+              residents: parseInt(body.residents, 10) || 0,
+              developed_zones: parseInt(body.developed_zones, 10) || 0,
+              disaster_resilience: parseFloat(body.disaster_resilience) || 0,
+              disasters_survived: parseInt(body.disasters_survived, 10) || 0,
+            };
+            try {
+              const { questions, report } = await generateSessionReview(env, stats);
+              await incrementAiQuota(env, user?.id, ip);
+              response =
+                path === '/api/ai/mayor-report'
+                  ? json({ report, remaining: quota.remaining - 1 }, 200, corsHeaders)
+                  : json({ questions, remaining: quota.remaining - 1 }, 200, corsHeaders);
+            } catch (e) {
+              console.error('AI review error', e);
+              response = json({ error: 'AI temporarily unavailable' }, 503, corsHeaders);
+            }
+          } else {
+            response = json({ error: 'Not found' }, 404, corsHeaders);
+          }
         }
       } else if (path === '/api/health' && method === 'GET') {
         response = json({ ok: true, service: 'classroom-simcity-api' }, 200, corsHeaders);

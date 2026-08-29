@@ -241,7 +241,23 @@ Or set `is_admin = 1` in D1 for an existing user.
 
 ---
 
+## Workers AI (Low-Usage)
+
+Lightweight AI via **Cloudflare Workers AI** (`@cf/meta/llama-3.2-1b-instruct`):
+
+| Feature | When | Daily limit |
+|---------|------|-------------|
+| **AI Tip** | Help panel → "AI Tip" | 12/user, 3/guest |
+| **Session review** | End screen → "AI Discussion Questions" | Same quota (1 call) |
+
+Endpoints: `POST /api/ai/tip`, `POST /api/ai/session-review`
+
+Disable globally: set `AI_ENABLED=false` in `wrangler.toml`.
+
+---
+
 ## Cheat Codes (Teachers)
+
 
 Press `/` or click **Console**. Commands:
 

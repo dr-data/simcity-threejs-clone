@@ -53,7 +53,9 @@
         </div>
         <h3>Reflection</h3>
         <ul id="reflection-prompts" class="reflection-list"></ul>
+        <p id="ai-mayor-report" class="ai-text"></p>
         <div class="end-actions">
+          <button type="button" class="action-btn secondary" id="btn-ai-reflection" onclick="ui.fetchAiReflection()">AI Discussion Questions</button>
           <a href="?quick=1" class="action-btn">Play Again</a>
           <a href="/leaderboard.html" class="action-btn secondary">View Leaderboard</a>
         </div>
@@ -171,6 +173,10 @@
           <li>Spread zones to reduce disaster damage concentration.</li>
           <li>Trade-off: industrial growth vs. resilience and sustainability.</li>
         </ul>
+        <div id="ai-tip-box" class="ai-tip-box">
+          <p id="ai-tip-text">Press for a personalized planning tip.</p>
+          <button type="button" class="action-btn small" onclick="ui.fetchAiTip()">AI Tip</button>
+        </div>
         <button class="action-btn" onclick="document.getElementById('help-panel').style.display='none'">Close</button>
       </div>
     </div>

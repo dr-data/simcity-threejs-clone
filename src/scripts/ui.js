@@ -4,6 +4,7 @@ import playIconUrl from '/icons/play-color.png';
 import pauseIconUrl from '/icons/pause-color.png';
 import gameConfig from './gameConfig.js';
 import { CITY_TEMPLATES } from './templates/cityTemplates.js';
+import { authClient } from './auth/authClient.js';
 
 export class GameUI {
   activeToolId = 'select';
@@ -193,6 +194,61 @@ export class GameUI {
 
   onDisaster() {
     window.game?.triggerDisaster();
+  }
+
+  async fetchAiTip() {
+    if (!gameConfig.aiEnabled) {
+      this.showToast('AI tips disabled for this session.');
+      return;
+    }
+    const city = window.game?.city;
+    if (!city) return;
+    const stats = city.getSessionStats();
+    const tipEl = document.getElementById('ai-tip-text');
+    if (tipEl) tipEl.textContent = 'Thinking...';
+    try {
+      const data = await authClient.aiTip({
+        residents: stats.residents,
+        developed_zones: stats.developedZones,
+        disaster_resilience: stats.disasterResilience,
+        power_capacity: stats.power.capacity,
+        power_demand: stats.power.demand,
+      });
+      if (tipEl) tipEl.textContent = data.tip || 'No tip available.';
+      this.showToast(`AI tip (${data.remaining ?? '?'} left today)`);
+    } catch (err) {
+      if (tipEl) tipEl.textContent = 'Could not load tip. Try again later.';
+      this.showToast(err.message);
+    }
+  }
+
+  async fetchAiReflection() {
+    if (!gameConfig.aiEnabled) return;
+    const stats = window.sessionManager?.lastStats;
+    if (!stats) return;
+    const btn = document.getElementById('btn-ai-reflection');
+    if (btn) btn.disabled = true;
+    try {
+      const data = await authClient.aiSessionReview({
+        score: stats.score,
+        residents: stats.residents,
+        developed_zones: stats.developedZones,
+        disaster_resilience: stats.disasterResilience,
+        disasters_survived: stats.disastersSurvived,
+      });
+      const promptEl = document.getElementById('reflection-prompts');
+      if (promptEl && data.questions?.length) {
+        promptEl.innerHTML = data.questions.map((q) => `<li>${q}</li>`).join('');
+      }
+      const reportEl = document.getElementById('ai-mayor-report');
+      if (reportEl && data.report) {
+        reportEl.textContent = data.report;
+      }
+      this.showToast(`AI review (${data.remaining ?? '?'} left today)`);
+    } catch (err) {
+      this.showToast(err.message);
+      if (btn) btn.disabled = false;
+    }
   }
 
   populateTemplates() {

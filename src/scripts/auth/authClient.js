@@ -66,6 +66,10 @@ export const authClient = {
     request(`/api/admin/sessions${userId ? `?user_id=${userId}` : ''}`),
   adminDeleteSession: (id) =>
     request(`/api/admin/sessions/${id}`, { method: 'DELETE' }),
+  aiTip: (stats) =>
+    request('/api/ai/tip', { method: 'POST', body: JSON.stringify(stats) }),
+  aiSessionReview: (stats) =>
+    request('/api/ai/session-review', { method: 'POST', body: JSON.stringify(stats) }),
 };
 
 export function getApiBase() {

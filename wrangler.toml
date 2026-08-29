@@ -11,7 +11,9 @@ database_id = "3dbdbfc3-04bb-4ff8-b1ba-293d631fbe3e"
 [vars]
 ALLOWED_ORIGIN = "https://classroom-simcity.pages.dev"
 DEV_MODE = "false"
+AI_ENABLED = "true"
 
-# Override in production: wrangler secret put SESSION_SECRET
-# SESSION_SECRET must be set for auth to work (via secret or vars below for dev)
-SESSION_SECRET = "change-me-before-production-use-a-long-random-string"
+# Set via: echo "$(openssl rand -hex 32)" | wrangler secret put SESSION_SECRET
+
+[ai]
+binding = "AI"

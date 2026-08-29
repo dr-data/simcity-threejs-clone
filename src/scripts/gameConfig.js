@@ -11,6 +11,7 @@ const defaults = {
   startingBudget: 5000,
   allowGodMode: true,
   allowCheats: true,
+  aiEnabled: true,
   defaultTemplate: 'balanced',
   quickStartTemplate: 'small-town',
   showTutorial: true,

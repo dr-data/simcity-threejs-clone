@@ -555,6 +555,25 @@ h1 {
   border-radius: 4px;
 }
 
+.ai-tip-box {
+  margin-top: 16px;
+  padding: 12px;
+  background: #00000040;
+  border-radius: 8px;
+}
+
+.ai-tip-box p, .ai-text {
+  font-size: 0.9em;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.ai-text {
+  font-style: italic;
+  color: #c8d8f0;
+  margin-top: 8px;
+}
+
 a {
   color: #81b1e0;
 }

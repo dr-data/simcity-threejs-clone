@@ -148,6 +148,11 @@
         <div id="action-bar" class="action-bar-inner">
           <label class="action-label">Template</label>
           <select id="template-select" onchange="ui.onTemplateChange(event)"></select>
+          <div class="action-btn-row mobile-more-actions">
+            <button type="button" class="action-btn small" id="more-btn-god" onclick="ui.toggleGodMode()">GOD Mode</button>
+            <button type="button" class="action-btn small" onclick="ui.onDisaster()">Disaster</button>
+            <button type="button" class="action-btn small" onclick="ui.togglePause()">Pause</button>
+          </div>
           <div class="action-btn-row">
             <button type="button" class="action-btn small" onclick="ui.onSaveCity()">Save</button>
             <button type="button" class="action-btn small" onclick="ui.onLoadCity()">Load</button>

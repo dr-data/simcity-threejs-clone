@@ -27,7 +27,7 @@ export VITE_API_URL="${VITE_API_URL:-$WORKER_URL}"
 npm run build
 
 echo "==> Deploying Pages (production)..."
-npx wrangler pages deploy dist --project-name=classroom-simcity --branch=main --commit-dirty=true
+npx wrangler pages deploy dist --project-name=classroom-simcity --branch=main --commit-dirty=true --config=wrangler.pages.toml
 
 echo ""
 echo "Done!"

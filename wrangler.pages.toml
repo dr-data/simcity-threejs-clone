@@ -1,0 +1,3 @@
+# Cloudflare Pages config (separate from Worker wrangler.toml)
+name = "classroom-simcity"
+pages_build_output_dir = "dist"

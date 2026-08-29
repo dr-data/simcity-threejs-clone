@@ -56,7 +56,9 @@ export class GameUI {
     }
     this.godMode = !this.godMode;
     const btn = document.getElementById('button-god');
+    const moreBtn = document.getElementById('more-btn-god');
     if (btn) btn.classList.toggle('selected', this.godMode);
+    if (moreBtn) moreBtn.classList.toggle('selected', this.godMode);
     this.showToast(this.godMode ? 'GOD mode ON' : 'GOD mode OFF');
   }
 

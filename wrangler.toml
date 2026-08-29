@@ -1,7 +1,6 @@
 name = "classroom-simcity-api"
 main = "worker/src/index.js"
 compatibility_date = "2026-01-01"
-pages_build_output_dir = "dist"
 
 # D1 database (created via Cloudflare MCP / wrangler d1 create)
 [[d1_databases]]

@@ -464,9 +464,18 @@ h1 {
   font-size: 0.9em;
 }
 
+.mobile-more-actions {
+  display: none;
+}
+
 .action-btn.small {
   padding: 6px 10px;
   font-size: 0.8em;
+}
+
+.action-btn.small.selected {
+  background: #5a6a8a;
+  outline: 2px solid rgb(101, 101, 135);
 }
 
 .action-btn.secondary {
@@ -734,14 +743,16 @@ a {
   #title-bar {
     height: 44px;
     padding: 4px 8px;
+    z-index: 92;
   }
 
   .title-bar-items {
-    font-size: 1em;
+    font-size: 0.95em;
   }
 
   .title-bar-items.title-bar-center-items {
-    font-size: 1.1em;
+    font-size: 1em;
+    flex: 1 1 50%;
   }
 
   .title-date-sep,
@@ -750,41 +761,70 @@ a {
   }
 
   #population-icon {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
   }
 
-  #top-nav {
-    top: 44px;
-    right: 4px;
-    left: auto;
-    gap: 8px;
-    font-size: 0.75em;
-    flex-wrap: nowrap;
+  #population-counter {
+    margin-left: 4px;
   }
 
-  #top-nav a {
-    padding: 2px 4px;
-  }
-
+  /* Stats strip — full width under title bar */
   #stats-panel {
     top: 44px;
-    right: 4px;
-    left: auto;
-    width: auto;
-    min-width: 118px;
-    max-width: 42vw;
-    padding: 6px 8px;
-    font-size: 0.68em;
-    border-radius: 0 0 8px 8px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    padding: 4px 6px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 2px 8px;
+    border-radius: 0;
+    font-size: 0.62em;
+    z-index: 91;
+    box-sizing: border-box;
   }
 
   .stat-row {
-    margin: 2px 0;
+    margin: 0;
+    flex: 0 0 auto;
+    gap: 4px;
   }
 
   .stat-row.time-row span:last-child {
     font-size: 1em;
+  }
+
+  /* Nav row — centered below stats, no overlap */
+  #top-nav {
+    top: 68px;
+    left: 0;
+    right: 0;
+    justify-content: center;
+    gap: 10px;
+    font-size: 0.72em;
+    flex-wrap: wrap;
+    padding: 2px 8px 4px;
+    z-index: 90;
+  }
+
+  #top-nav a {
+    padding: 2px 6px;
+  }
+
+  #settings-btn {
+    padding: 2px 8px;
+  }
+
+  .mobile-more-actions {
+    display: flex;
+  }
+
+  .toolbar-extra {
+    display: none !important;
   }
 
   /* Hide left vertical toolbar on mobile */
@@ -799,6 +839,8 @@ a {
     box-shadow: none;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   #ui-toolbar::-webkit-scrollbar {
@@ -808,29 +850,31 @@ a {
   #ui-toolbar .ui-button {
     flex: 0 0 auto;
     margin: 0;
-    height: 42px;
-    width: 42px;
-    min-width: 42px;
+    height: 40px;
+    width: 40px;
+    min-width: 40px;
   }
 
   #ui-toolbar .toolbar-icon {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
   }
 
   #view-buttons.view-bar {
     position: static;
-    justify-content: center;
-    gap: 4px;
+    justify-content: stretch;
+    gap: 3px;
     padding: 0;
     flex-wrap: nowrap;
+    flex: 0 0 auto;
   }
 
   .view-btn {
-    padding: 6px 8px;
-    font-size: 0.72em;
-    flex: 1 1 auto;
+    padding: 6px 4px;
+    font-size: 0.65em;
+    flex: 1 1 0;
     min-width: 0;
+    white-space: nowrap;
   }
 
   #game-controls {
@@ -842,18 +886,19 @@ a {
     right: 0;
     z-index: 95;
     width: 100%;
-    padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
+    padding: 4px 6px calc(4px + env(safe-area-inset-bottom));
     gap: 4px;
     background: #1e2331ee;
     border-radius: 0;
     pointer-events: auto;
+    box-sizing: border-box;
   }
 
   #game-controls .view-bar {
     display: flex;
     position: static;
     justify-content: center;
-    gap: 4px;
+    gap: 3px;
     padding: 0;
     flex-wrap: nowrap;
   }
@@ -862,55 +907,59 @@ a {
     display: flex;
     align-items: center;
     width: 100%;
+    min-width: 0;
   }
 
   .toolbar-scroll {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    min-width: 0;
   }
 
   .dock-more-btn {
     display: block;
-    align-self: center;
+    align-self: stretch;
     width: 100%;
-    max-width: 120px;
-    margin: 2px auto 0;
-    padding: 6px 16px;
+    max-width: none;
+    margin: 0;
+    padding: 8px 16px;
     background: #3a3f50;
     color: white;
     border: none;
     border-radius: 8px;
-    font-size: 1.2em;
+    font-size: 1em;
     font-family: inherit;
     cursor: pointer;
   }
 
   #info-panel {
     top: auto;
-    bottom: calc(148px + env(safe-area-inset-bottom));
+    bottom: calc(168px + env(safe-area-inset-bottom));
     right: 4px;
     left: 4px;
     width: auto;
-    max-height: 32vh;
+    max-height: 28vh;
     overflow-y: auto;
   }
 
   #cheat-console {
-    bottom: calc(160px + env(safe-area-inset-bottom));
+    bottom: calc(180px + env(safe-area-inset-bottom));
     left: 4px;
     right: 4px;
     width: auto;
   }
 
   .banner-message {
-    top: 48px;
-    font-size: 0.9em;
+    top: 96px;
+    font-size: 0.85em;
     max-width: 92vw;
     text-align: center;
+    padding: 8px 12px;
   }
 
   .banner-message.toast {
-    bottom: calc(160px + env(safe-area-inset-bottom));
+    bottom: calc(180px + env(safe-area-inset-bottom));
+    top: auto;
   }
 
   .modal-panel {

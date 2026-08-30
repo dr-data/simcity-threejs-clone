@@ -114,7 +114,11 @@ export class DisasterManager {
 
     const severity = Math.min(0.85, this.severity * (levelMeta.severityMult / 0.25));
     const hitCount = Math.max(1, Math.floor(zones.length * severity));
-    const shuffled = [...zones].sort(() => Math.random() - 0.5).slice(0, hitCount);
+    const developed = zones.filter(
+      (t) => t.building.development?.state === DevelopmentState.developed
+    );
+    const targetPool = developed.length > 0 ? developed : zones;
+    const shuffled = [...targetPool].sort(() => Math.random() - 0.5).slice(0, hitCount);
 
     let completed = 0;
 

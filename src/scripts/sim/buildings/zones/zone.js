@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { DEG2RAD } from 'three/src/math/MathUtils.js';
 import { DevelopmentModule, DevelopmentState } from '../modules/development.js';
 import { Building } from '../building.js';
+import { DisasterBuildingEffects } from '../../../disaster/disasterAnimations.js';
 
 /**
  * Represents a zoned building such as residential, commercial or industrial
@@ -28,6 +29,8 @@ export class Zone extends Building {
   }
 
   refreshView() {
+    DisasterBuildingEffects.removeEffects(this);
+
     let modelName;
     switch (this.development.state) {
       case DevelopmentState.underConstruction:
@@ -35,7 +38,11 @@ export class Zone extends Building {
         modelName = 'under-construction';
         break;
       case DevelopmentState.damaged:
-        modelName = 'under-construction';
+        // Keep developed building model when possible so wreck animation is visible
+        modelName =
+          this.development.level >= 1
+            ? `${this.type}-${this.style}${this.development.level}`
+            : 'under-construction';
         break;
       default:
         modelName = `${this.type}-${this.style}${this.development.level}`;
@@ -44,23 +51,10 @@ export class Zone extends Building {
 
     let mesh = window.assetManager.getModel(modelName, this);
 
-    // Tint damaged buildings by disaster type
+    this.setMesh(mesh);
+
     if (this.development.state === DevelopmentState.damaged) {
-      const tints = {
-        fire: 0x994422,
-        earthquake: 0x666666,
-        flood: 0x336699,
-        tornado: 0x777788,
-        meteor: 0x993333,
-        blizzard: 0x8899bb,
-        drought: 0x998844,
-      };
-      const tint = tints[this.development.damageType] || 0x884444;
-      mesh.traverse((obj) => {
-        if (obj.material?.color) {
-          obj.material.color = new THREE.Color(tint);
-        }
-      });
+      DisasterBuildingEffects.applyWreckAppearance(this);
     }
 
     // Tint building a dark color if it is abandoned
@@ -71,8 +65,6 @@ export class Zone extends Building {
         }
       });
     }
-    
-    this.setMesh(mesh);
   }
 
   simulate(city) {

@@ -44,6 +44,18 @@ export class DevelopmentModule extends SimModule {
   damageLevel = '';
 
   /**
+   * Wreck pose after disaster (for model animation)
+   * @type {number | null}
+   */
+  damageTilt = null;
+
+  /** @type {number | null} */
+  damageSink = null;
+
+  /** @type {number | null} */
+  damageScaleMul = null;
+
+  /**
    * Counter for days under construction
    * @type {number}
    */
@@ -145,6 +157,9 @@ export class DevelopmentModule extends SimModule {
           this.repairCounter = 0;
           this.damageType = '';
           this.damageLevel = '';
+          this.damageTilt = null;
+          this.damageSink = null;
+          this.damageScaleMul = null;
           this.repairTicksNeeded = 5;
         }
         break;

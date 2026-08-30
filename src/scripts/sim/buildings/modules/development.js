@@ -26,6 +26,24 @@ export class DevelopmentModule extends SimModule {
   repairCounter = 0;
 
   /**
+   * Ticks needed to repair (set by disaster severity)
+   * @type {number}
+   */
+  repairTicksNeeded = 5;
+
+  /**
+   * Disaster type that caused damage (for visuals)
+   * @type {string}
+   */
+  damageType = '';
+
+  /**
+   * Disaster level that caused damage
+   * @type {string}
+   */
+  damageLevel = '';
+
+  /**
    * Counter for days under construction
    * @type {number}
    */
@@ -122,9 +140,12 @@ export class DevelopmentModule extends SimModule {
         }
         break;
       case DevelopmentState.damaged:
-        if (++this.repairCounter >= 5) {
+        if (++this.repairCounter >= this.repairTicksNeeded) {
           this.state = DevelopmentState.developed;
           this.repairCounter = 0;
+          this.damageType = '';
+          this.damageLevel = '';
+          this.repairTicksNeeded = 5;
         }
         break;
     }

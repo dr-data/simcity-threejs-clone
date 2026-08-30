@@ -7,6 +7,14 @@ import { CITY_TEMPLATES } from './templates/cityTemplates.js';
 import { authClient } from './auth/authClient.js';
 import { settingsManager } from './settings/settingsManager.js';
 import { initTutorial, startGuidedTour } from './tutorial/initTutorial.jsx';
+import {
+  DISASTER_TYPES,
+  DISASTER_LEVELS,
+  DISASTER_TYPE_IDS,
+  DISASTER_LEVEL_IDS,
+} from './disaster/disasterConfig.js';
+
+const SIM_START_DATE = gameConfig.simStartDate || '2026-09-01';
 
 export class GameUI {
   activeToolId = 'select';
@@ -81,7 +89,7 @@ export class GameUI {
     if (budgetEl && window.budgetManager) {
       budgetEl.textContent = `$${window.budgetManager.budget}`;
     }
-    const date = new Date('1/1/2023');
+    const date = new Date(SIM_START_DATE);
     date.setDate(date.getDate() + game.city.simTime);
     document.getElementById('sim-time').innerHTML = date.toLocaleDateString();
   }
@@ -236,6 +244,12 @@ export class GameUI {
 
   onCameraView(view) {
     window.game?.cameraManager?.setView(view);
+    document.querySelectorAll('.view-btn').forEach((btn) => {
+      const match =
+        btn.getAttribute('data-view') === view ||
+        btn.getAttribute('onclick')?.includes(`'${view}'`);
+      btn.classList.toggle('active', match);
+    });
   }
 
   onTemplateChange(event) {
@@ -271,7 +285,36 @@ export class GameUI {
   }
 
   onDisaster() {
-    window.game?.triggerDisaster();
+    const type =
+      document.getElementById('disaster-type-select')?.value ||
+      document.getElementById('disaster-type-select-mobile')?.value;
+    const level =
+      document.getElementById('disaster-level-select')?.value ||
+      document.getElementById('disaster-level-select-mobile')?.value ||
+      'moderate';
+    window.game?.triggerDisaster(type, level);
+  }
+
+  populateDisasterOptions() {
+    const typeOptions = DISASTER_TYPE_IDS.map(
+      (id) =>
+        `<option value="${id}">${DISASTER_TYPES[id].emoji} ${DISASTER_TYPES[id].label}</option>`
+    ).join('');
+    const levelOptions = DISASTER_LEVEL_IDS.map(
+      (id) => `<option value="${id}">${DISASTER_LEVELS[id].label}</option>`
+    ).join('');
+
+    ['disaster-type-select', 'disaster-type-select-mobile'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = typeOptions;
+    });
+    ['disaster-level-select', 'disaster-level-select-mobile'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.innerHTML = levelOptions;
+        el.value = 'moderate';
+      }
+    });
   }
 
   async fetchAiTip() {
@@ -342,4 +385,5 @@ export class GameUI {
 
 window.ui = new GameUI();
 window.ui.populateTemplates();
+window.ui.populateDisasterOptions();
 initTutorial();

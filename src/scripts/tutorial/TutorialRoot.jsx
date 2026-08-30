@@ -19,8 +19,8 @@ const steps = [
     placement: 'right',
   },
   {
-    target: '#view-buttons',
-    content: 'Switch camera views: top-down, isometric, street level, or orbit.',
+    target: '#bottom-right-dock, #btn-more',
+    content: 'Switch camera views and trigger disasters from the bottom panel (desktop) or More menu (mobile).',
     placement: 'top',
   },
   {

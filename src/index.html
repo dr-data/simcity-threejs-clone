@@ -70,7 +70,7 @@
         <div class="title-bar-center-items title-bar-items">
           <span id="city-name">My City</span>
           <span class="title-date-sep">&nbsp;-&nbsp;</span>
-          <span id="sim-time">1/1/2023</span>
+          <span id="sim-time">9/1/2026</span>
         </div>
         <div class="title-bar-right-items title-bar-items">
           <img id="population-icon" src="/icons/person.png" alt="">
@@ -96,12 +96,6 @@
       </div>
 
       <div id="game-controls" class="container">
-        <div id="view-buttons" class="view-bar dock-row">
-          <button class="view-btn" onclick="ui.onCameraView('top')">Top</button>
-          <button class="view-btn" onclick="ui.onCameraView('isometric')">Iso</button>
-          <button class="view-btn" onclick="ui.onCameraView('street')">Street</button>
-          <button class="view-btn" onclick="ui.onCameraView('orbit')">Orbit</button>
-        </div>
         <div id="ui-toolbar" class="dock-row toolbar-scroll">
           <button id="button-select" class="ui-button selected" data-type="select" onclick="ui.onToolSelected(event)">
             <img class="toolbar-icon" src="/icons/select-color.png" alt="Select">
@@ -137,7 +131,23 @@
             <span class="god-icon">⚡</span>
           </button>
         </div>
-        <button type="button" id="btn-more" class="dock-more-btn" onclick="ui.toggleMorePanel()" aria-label="More actions">⋯</button>
+        <button type="button" id="btn-more" class="dock-more-btn" onclick="ui.toggleMorePanel()" aria-label="More actions">More ⋯</button>
+      </div>
+
+      <div id="bottom-right-dock" class="desktop-only-dock">
+        <div id="view-buttons" class="view-bar">
+          <span class="dock-label">View</span>
+          <button type="button" class="view-btn" data-view="top" onclick="ui.onCameraView('top')">Top</button>
+          <button type="button" class="view-btn" data-view="isometric" onclick="ui.onCameraView('isometric')">Iso</button>
+          <button type="button" class="view-btn" data-view="street" onclick="ui.onCameraView('street')">Street</button>
+          <button type="button" class="view-btn" data-view="orbit" onclick="ui.onCameraView('orbit')">Orbit</button>
+        </div>
+        <div id="disaster-bar" class="disaster-bar">
+          <span class="dock-label">Disaster</span>
+          <select id="disaster-type-select" class="dock-select" aria-label="Disaster type"></select>
+          <select id="disaster-level-select" class="dock-select" aria-label="Disaster level"></select>
+          <button type="button" class="action-btn small" onclick="ui.onDisaster()">Trigger</button>
+        </div>
       </div>
 
       <div id="more-panel" class="slide-panel" aria-hidden="true">
@@ -146,11 +156,23 @@
           <button type="button" class="nav-icon-btn" onclick="ui.toggleMorePanel(false)">✕</button>
         </div>
         <div id="action-bar" class="action-bar-inner">
+          <label class="action-label">Camera View</label>
+          <div class="action-btn-row view-btn-row mobile-view-controls">
+            <button type="button" class="view-btn" onclick="ui.onCameraView('top')">Top</button>
+            <button type="button" class="view-btn" onclick="ui.onCameraView('isometric')">Iso</button>
+            <button type="button" class="view-btn" onclick="ui.onCameraView('street')">Street</button>
+            <button type="button" class="view-btn" onclick="ui.onCameraView('orbit')">Orbit</button>
+          </div>
+          <label class="action-label">Disaster</label>
+          <div class="disaster-select-row">
+            <select id="disaster-type-select-mobile" class="dock-select" aria-label="Disaster type"></select>
+            <select id="disaster-level-select-mobile" class="dock-select" aria-label="Disaster level"></select>
+          </div>
           <label class="action-label">Template</label>
           <select id="template-select" onchange="ui.onTemplateChange(event)"></select>
           <div class="action-btn-row mobile-more-actions">
             <button type="button" class="action-btn small" id="more-btn-god" onclick="ui.toggleGodMode()">GOD Mode</button>
-            <button type="button" class="action-btn small" onclick="ui.onDisaster()">Disaster</button>
+            <button type="button" class="action-btn small" onclick="ui.onDisaster()">Trigger Disaster</button>
             <button type="button" class="action-btn small" onclick="ui.togglePause()">Pause</button>
           </div>
           <div class="action-btn-row">
@@ -164,11 +186,12 @@
 
       <div id="info-panel" class="container"></div>
 
-      <div id="instructions">
-        BUILD - Left Click / Tap<br>
-        ROTATE - Right Drag / Touch Drag<br>
-        PAN - Ctrl + Right Drag<br>
-        ZOOM - Scroll
+      <div id="instructions" class="help-hint">
+        <strong>Controls</strong><br>
+        Build — Left click / Tap<br>
+        Rotate — Right drag / Touch drag<br>
+        Pan — Ctrl + right drag<br>
+        Zoom — Scroll
       </div>
 
       <div id="version">Classroom SimCity v1.1</div>

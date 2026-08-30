@@ -106,7 +106,13 @@ export class CheatConsole {
         }
         break;
       case 'disaster':
-        window.disasterManager?.triggerRandomDisaster();
+        const dType = parts[1];
+        const dLevel = parts[2] || 'moderate';
+        if (dType) {
+          window.disasterManager?.triggerDisaster(dType, dLevel);
+        } else {
+          window.disasterManager?.triggerRandomDisaster();
+        }
         this.log('Disaster triggered!');
         break;
       default:

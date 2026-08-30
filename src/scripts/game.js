@@ -6,6 +6,7 @@ import { City } from './sim/city.js';
 import { SimObject } from './sim/simObject.js';
 import gameConfig from './gameConfig.js';
 import { SessionManager } from './session/sessionManager.js';
+import { DISASTER_LEVELS } from './disaster/disasterConfig.js';
 import { DisasterManager } from './disaster/disasterManager.js';
 import { CheatConsole } from './cheat/cheatConsole.js';
 import { SaveLoadManager } from './save/saveLoadManager.js';
@@ -253,17 +254,25 @@ export class Game {
     this.renderer.setSize(window.ui.gameWindow.clientWidth, window.ui.gameWindow.clientHeight);
   }
 
-  triggerDisaster() {
+  triggerDisaster(type, level) {
+    const levelId = level || 'moderate';
+    const levelMeta = DISASTER_LEVELS[levelId] || DISASTER_LEVELS.moderate;
+    const cost = levelMeta.cost;
+
     if (!window.ui.godMode) {
-      const penalty = 200;
-      if (window.budgetManager.budget < penalty) {
-        window.ui.showToast('Need $200 budget to trigger disaster (or use GOD mode).');
+      if (window.budgetManager.budget < cost) {
+        window.ui.showToast(`Need $${cost} budget to trigger disaster (or use GOD mode).`);
         return;
       }
-      window.budgetManager.budget -= penalty;
+      window.budgetManager.budget -= cost;
       window.ui.updateTitleBar(this);
     }
-    window.disasterManager?.triggerRandomDisaster();
+
+    if (type) {
+      window.disasterManager?.triggerDisaster(type, levelId);
+    } else {
+      window.disasterManager?.triggerRandomDisaster();
+    }
   }
 
   loadTemplate(templateId) {

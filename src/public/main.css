@@ -6,7 +6,9 @@
 html, body {
   height: 100%;
   margin: 0;
-  font-family: Bebas-Regular, sans-serif;
+  font-family: Bebas-Regular, 'Segoe UI', system-ui, sans-serif;
+  font-size: 18px;
+  line-height: 1.45;
 
   background: linear-gradient(0deg, #3a5177, #81b1e0);
 }
@@ -29,11 +31,29 @@ h1 {
 }
 
 #instructions {
-  position: absolute;
-  color: white;
-  left: 0;
-  bottom: 0;
-  margin: 8px;
+  position: fixed;
+  color: #f0f4ff;
+  left: 8px;
+  bottom: 8px;
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 1rem;
+  line-height: 1.5;
+  max-width: min(420px, 48vw);
+  background: rgba(15, 20, 35, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  z-index: 75;
+  pointer-events: none;
+}
+
+#instructions strong {
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+}
+
+.help-hint {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
 }
 
 #version {
@@ -58,8 +78,9 @@ h1 {
 }
 
 .container {
-  background-color: #00000048;
+  background-color: rgba(10, 14, 28, 0.72);
   padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 #bottom-dock,
@@ -273,11 +294,11 @@ h1 {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 1.5em;
+  font-size: 1.65rem;
 }
 
 .title-bar-items.title-bar-center-items {
-  font-size: 2em;
+  font-size: 2rem;
 }
 
 #population-icon {
@@ -382,16 +403,17 @@ h1 {
 
 .banner-message {
   position: fixed;
-  top: 56px;
+  top: 64px;
   left: 50%;
   transform: translateX(-50%);
-  background: #1e2331ee;
+  background: rgba(20, 26, 42, 0.95);
   color: white;
-  padding: 10px 20px;
-  border-radius: 8px;
+  padding: 12px 22px;
+  border-radius: 10px;
   visibility: hidden;
   z-index: 100;
-  font-size: 1.2em;
+  font-size: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .banner-message.milestone {
@@ -406,12 +428,12 @@ h1 {
 
 #top-nav {
   position: fixed;
-  top: 48px;
+  top: 52px;
   right: 8px;
   display: flex;
-  gap: 12px;
+  gap: 14px;
   z-index: 90;
-  font-size: 0.9em;
+  font-size: 1.05rem;
 }
 
 #top-nav a, #top-nav span {
@@ -421,11 +443,11 @@ h1 {
 
 #stats-panel {
   position: fixed;
-  top: 72px;
+  top: 76px;
   right: 8px;
-  width: 200px;
+  width: 240px;
   z-index: 80;
-  font-size: 0.95em;
+  font-size: 1.05rem;
   color: white;
 }
 
@@ -441,27 +463,99 @@ h1 {
 }
 
 .view-bar {
-  position: fixed;
-  bottom: 8px;
-  left: 60px;
   display: flex;
-  gap: 4px;
+  align-items: center;
+  gap: 6px;
   z-index: 80;
 }
 
-#view-buttons.view-bar {
+#bottom-right-dock {
   position: fixed;
+  bottom: 8px;
+  right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 85;
+  max-width: min(520px, 96vw);
+}
+
+.dock-label {
+  font-size: 0.85rem;
+  color: #b8c8e8;
+  letter-spacing: 0.06em;
+  margin-right: 4px;
+  white-space: nowrap;
+}
+
+#view-buttons.view-bar {
+  background: rgba(15, 20, 35, 0.9);
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  flex-wrap: wrap;
+}
+
+.disaster-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 20, 35, 0.9);
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  flex-wrap: wrap;
+}
+
+.dock-select {
+  background: #121622;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  min-width: 0;
+}
+
+.disaster-select-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.disaster-select-row .dock-select {
+  flex: 1 1 140px;
+}
+
+.view-btn-row {
+  gap: 6px;
+}
+
+.view-btn-row .view-btn {
+  flex: 1 1 auto;
 }
 
 .view-btn, .action-btn {
-  background: #1e2331cd;
+  background: #2a3348;
   color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 10px 14px;
   cursor: pointer;
   font-family: inherit;
-  font-size: 0.9em;
+  font-size: 1rem;
+  letter-spacing: 0.03em;
+}
+
+.view-btn.active,
+.view-btn:hover {
+  background: #4a5a78;
+  outline: 2px solid rgba(140, 170, 220, 0.6);
+}
+
+.mobile-view-controls {
+  display: none;
 }
 
 .mobile-more-actions {
@@ -736,22 +830,30 @@ a {
     display: none;
   }
 
+  #bottom-right-dock {
+    display: none !important;
+  }
+
+  .mobile-view-controls {
+    display: flex;
+  }
+
   .text-overlay {
     font-size: 2.5em;
   }
 
   #title-bar {
-    height: 44px;
-    padding: 4px 8px;
+    height: 48px;
+    padding: 4px 10px;
     z-index: 92;
   }
 
   .title-bar-items {
-    font-size: 0.95em;
+    font-size: 1.15rem;
   }
 
   .title-bar-items.title-bar-center-items {
-    font-size: 1em;
+    font-size: 1.2rem;
     flex: 1 1 50%;
   }
 
@@ -771,19 +873,19 @@ a {
 
   /* Stats strip — full width under title bar */
   #stats-panel {
-    top: 44px;
+    top: 48px;
     left: 0;
     right: 0;
     width: 100%;
     max-width: none;
     min-width: 0;
-    padding: 4px 6px;
+    padding: 6px 10px;
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
-    gap: 2px 8px;
+    gap: 4px 10px;
     border-radius: 0;
-    font-size: 0.62em;
+    font-size: 0.95rem;
     z-index: 91;
     box-sizing: border-box;
   }
@@ -798,16 +900,16 @@ a {
     font-size: 1em;
   }
 
-  /* Nav row — centered below stats, no overlap */
+  /* Nav row — centered below stats */
   #top-nav {
-    top: 68px;
+    top: 78px;
     left: 0;
     right: 0;
     justify-content: center;
-    gap: 10px;
-    font-size: 0.72em;
+    gap: 12px;
+    font-size: 0.95rem;
     flex-wrap: wrap;
-    padding: 2px 8px 4px;
+    padding: 4px 10px 6px;
     z-index: 90;
   }
 
@@ -850,31 +952,14 @@ a {
   #ui-toolbar .ui-button {
     flex: 0 0 auto;
     margin: 0;
-    height: 40px;
-    width: 40px;
-    min-width: 40px;
+    height: 46px;
+    width: 46px;
+    min-width: 46px;
   }
 
   #ui-toolbar .toolbar-icon {
-    width: 26px;
-    height: 26px;
-  }
-
-  #view-buttons.view-bar {
-    position: static;
-    justify-content: stretch;
-    gap: 3px;
-    padding: 0;
-    flex-wrap: nowrap;
-    flex: 0 0 auto;
-  }
-
-  .view-btn {
-    padding: 6px 4px;
-    font-size: 0.65em;
-    flex: 1 1 0;
-    min-width: 0;
-    white-space: nowrap;
+    width: 30px;
+    height: 30px;
   }
 
   #game-controls {
@@ -886,21 +971,17 @@ a {
     right: 0;
     z-index: 95;
     width: 100%;
-    padding: 4px 6px calc(4px + env(safe-area-inset-bottom));
-    gap: 4px;
-    background: #1e2331ee;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+    gap: 6px;
+    background: rgba(20, 26, 42, 0.96);
     border-radius: 0;
     pointer-events: auto;
     box-sizing: border-box;
+    max-height: 28vh;
   }
 
   #game-controls .view-bar {
-    display: flex;
-    position: static;
-    justify-content: center;
-    gap: 3px;
-    padding: 0;
-    flex-wrap: nowrap;
+    display: none !important;
   }
 
   .dock-row {
@@ -922,44 +1003,64 @@ a {
     width: 100%;
     max-width: none;
     margin: 0;
-    padding: 8px 16px;
-    background: #3a3f50;
+    padding: 10px 16px;
+    background: #4a5a78;
     color: white;
     border: none;
-    border-radius: 8px;
-    font-size: 1em;
+    border-radius: 10px;
+    font-size: 1.1rem;
     font-family: inherit;
     cursor: pointer;
   }
 
+  .view-btn-row .view-btn {
+    padding: 10px 8px;
+    font-size: 0.95rem;
+    flex: 1 1 0;
+  }
+
   #info-panel {
     top: auto;
-    bottom: calc(168px + env(safe-area-inset-bottom));
-    right: 4px;
-    left: 4px;
+    bottom: calc(120px + env(safe-area-inset-bottom));
+    right: 6px;
+    left: 6px;
     width: auto;
-    max-height: 28vh;
+    max-height: 26vh;
     overflow-y: auto;
+    font-size: 1rem;
   }
 
   #cheat-console {
-    bottom: calc(180px + env(safe-area-inset-bottom));
-    left: 4px;
-    right: 4px;
+    bottom: calc(130px + env(safe-area-inset-bottom));
+    left: 6px;
+    right: 6px;
     width: auto;
   }
 
   .banner-message {
-    top: 96px;
-    font-size: 0.85em;
+    top: 108px;
+    font-size: 1rem;
     max-width: 92vw;
     text-align: center;
-    padding: 8px 12px;
+    padding: 10px 14px;
   }
 
   .banner-message.toast {
-    bottom: calc(180px + env(safe-area-inset-bottom));
+    bottom: calc(130px + env(safe-area-inset-bottom));
     top: auto;
+  }
+
+  .slide-panel {
+    max-height: 55vh;
+  }
+
+  .action-label {
+    font-size: 1rem;
+  }
+
+  .dock-select {
+    font-size: 1rem;
+    padding: 10px;
   }
 
   .modal-panel {
@@ -983,21 +1084,15 @@ a {
     top: 64px;
     left: 0;
     bottom: 0;
-    width: 56px;
+    width: 60px;
     padding: 4px;
     background: transparent;
     flex-direction: column;
+    max-height: none;
   }
 
-  #game-controls .view-bar {
-    display: none;
-  }
-
-  #view-buttons.view-bar {
+  #bottom-right-dock {
     display: flex;
-    position: fixed;
-    bottom: 8px;
-    left: 60px;
   }
 
   #ui-toolbar {
@@ -1013,5 +1108,11 @@ a {
 
   #more-panel {
     display: none !important;
+  }
+
+  #instructions {
+    bottom: 8px;
+    left: 72px;
+    max-width: min(380px, 40vw);
   }
 }

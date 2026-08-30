@@ -5,6 +5,7 @@
 
 const defaults = {
   sessionLengthMinutes: 15,
+  simStartDate: '2026-09-01',
   disasterFrequencyMin: 1,
   disasterFrequencyMax: 3,
   disasterSeverity: 0.25,

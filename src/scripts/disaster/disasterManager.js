@@ -1,10 +1,14 @@
 import { DevelopmentState } from '../sim/buildings/modules/development.js';
-import { BuildingType } from '../sim/buildings/buildingType.js';
-
-const DISASTER_TYPES = ['fire', 'earthquake', 'flood'];
+import {
+  DISASTER_TYPES,
+  DISASTER_LEVELS,
+  pickRandomType,
+  pickRandomLevel,
+} from './disasterConfig.js';
+import { DisasterAnimationManager } from './disasterAnimations.js';
 
 /**
- * Random disasters with visual effects and zone damage.
+ * Random disasters with visual effects, animations, and zone damage.
  */
 export class DisasterManager {
   disasterCount = 0;
@@ -12,6 +16,7 @@ export class DisasterManager {
   damagedZones = 0;
   overlayEl = null;
   shakeIntensity = 0;
+  animations = new DisasterAnimationManager();
 
   constructor(game) {
     this.game = game;
@@ -21,6 +26,7 @@ export class DisasterManager {
     this.severity = 0.25;
     this._plannedDisasters = 0;
     this._nextDisasterTime = 0;
+    this._pendingDamage = 0;
   }
 
   configure(frequencyMin, frequencyMax, severity) {
@@ -44,6 +50,7 @@ export class DisasterManager {
     this.disasterCount = 0;
     this.damagedZones = 0;
     this.totalZonesAtStart = city.getDevelopedZoneCount();
+    this.animations.setScene(this.game.scene);
     this.configure(
       window.gameConfig?.disasterFrequencyMin ?? 1,
       window.gameConfig?.disasterFrequencyMax ?? 3,
@@ -52,23 +59,31 @@ export class DisasterManager {
   }
 
   update() {
+    this.animations.update();
+
     if (window.ui?.godMode) return;
     if (this.disasterCount >= this._plannedDisasters) return;
     if (Date.now() >= this._nextDisasterTime) {
       this.triggerRandomDisaster();
     }
     if (this.shakeIntensity > 0) {
-      this.shakeIntensity *= 0.9;
+      this.shakeIntensity *= 0.88;
       if (this.shakeIntensity < 0.01) this.shakeIntensity = 0;
     }
   }
 
   triggerRandomDisaster() {
-    const type = DISASTER_TYPES[Math.floor(Math.random() * DISASTER_TYPES.length)];
-    this.triggerDisaster(type);
+    this.triggerDisaster(pickRandomType(), pickRandomLevel());
   }
 
-  triggerDisaster(type) {
+  /**
+   * @param {string} type
+   * @param {string} level
+   */
+  triggerDisaster(type, level = 'moderate') {
+    const typeMeta = DISASTER_TYPES[type] || DISASTER_TYPES.fire;
+    const levelMeta = DISASTER_LEVELS[level] || DISASTER_LEVELS.moderate;
+
     const city = this.game.city;
     const zones = [];
     for (let x = 0; x < city.size; x++) {
@@ -79,7 +94,8 @@ export class DisasterManager {
           b &&
           [BuildingType.residential, BuildingType.commercial, BuildingType.industrial].includes(
             b.type
-          )
+          ) &&
+          b.development?.state !== DevelopmentState.damaged
         ) {
           zones.push(tile);
         }
@@ -87,23 +103,45 @@ export class DisasterManager {
     }
     if (zones.length === 0) return;
 
-    const hitCount = Math.max(1, Math.floor(zones.length * this.severity));
+    const severity = Math.min(0.85, this.severity * (levelMeta.severityMult / 0.25));
+    const hitCount = Math.max(1, Math.floor(zones.length * severity));
     const shuffled = zones.sort(() => Math.random() - 0.5).slice(0, hitCount);
 
-    for (const tile of shuffled) {
-      const zone = tile.building;
-      if (zone.development) {
-        zone.development.state = DevelopmentState.damaged;
-        zone.development.repairCounter = 0;
-        this.damagedZones++;
-      }
-    }
+    this._pendingDamage = hitCount;
+    let completed = 0;
 
+    const onOneDamaged = () => {
+      this.damagedZones++;
+      completed++;
+      if (completed >= shuffled.length) {
+        this._finishDisaster(type, level, hitCount, typeMeta, levelMeta);
+      }
+    };
+
+    // Stagger animations slightly for visual impact
+    shuffled.forEach((tile, i) => {
+      const zone = tile.building;
+      const delay = i * 80;
+      setTimeout(() => {
+        this.animations.animateDamage(
+          zone,
+          type,
+          level,
+          levelMeta.repairTicks,
+          onOneDamaged
+        );
+      }, delay);
+    });
+
+    this._playEffects(type, level, hitCount, typeMeta, levelMeta);
+    this._showMessage(type, level, hitCount, typeMeta, levelMeta);
+  }
+
+  _finishDisaster(type, level, hitCount, typeMeta, levelMeta) {
     this.disasterCount++;
     this._scheduleNext();
-    this._playEffects(type, hitCount);
-    this._showMessage(type, hitCount);
 
+    const city = this.game.city;
     const resilience = city.getDisasterResilience();
     const damagePercent = 100 - resilience;
     if (window.sessionManager) {
@@ -111,41 +149,34 @@ export class DisasterManager {
     }
   }
 
-  _playEffects(type, hitCount) {
-    this.shakeIntensity = Math.min(1, hitCount * 0.15);
+  _playEffects(type, level, hitCount, typeMeta, levelMeta) {
+    const levelShake = level === 'catastrophic' ? 1.5 : level === 'major' ? 1.2 : 1;
+    this.shakeIntensity = Math.min(1.5, hitCount * 0.12 * typeMeta.shake * levelShake);
     if (this.overlayEl) {
-      const colors = {
-        fire: 'rgba(255,80,0,0.35)',
-        earthquake: 'rgba(100,100,100,0.4)',
-        flood: 'rgba(0,100,200,0.35)',
-      };
-      this.overlayEl.style.background = colors[type] || colors.fire;
+      this.overlayEl.style.background = typeMeta.overlay;
       this.overlayEl.style.opacity = '1';
+      const fadeMs = level === 'catastrophic' ? 2200 : 1600;
       setTimeout(() => {
         this.overlayEl.style.opacity = '0';
-      }, 1500);
+      }, fadeMs);
     }
   }
 
-  _showMessage(type, hitCount) {
+  _showMessage(type, level, hitCount, typeMeta, levelMeta) {
     const el = document.getElementById('disaster-message');
     if (!el) return;
-    const labels = {
-      fire: '🔥 Fire outbreak!',
-      earthquake: '🌋 Earthquake!',
-      flood: '🌊 Flood!',
-    };
-    el.textContent = `${labels[type] || 'Disaster!'} ${hitCount} zones damaged. Repair or rebuild!`;
+    el.textContent = `${typeMeta.emoji} ${typeMeta.label} (${levelMeta.label})! ${hitCount} zones hit — buildings collapsing!`;
     el.style.visibility = 'visible';
     setTimeout(() => {
       el.style.visibility = 'hidden';
-    }, 4000);
+    }, 5000);
   }
 
   applyShake(camera) {
     if (this.shakeIntensity <= 0) return;
-    const offset = this.shakeIntensity * 0.05;
+    const offset = this.shakeIntensity * 0.06;
     camera.position.x += (Math.random() - 0.5) * offset;
     camera.position.z += (Math.random() - 0.5) * offset;
+    camera.position.y += (Math.random() - 0.5) * offset * 0.3;
   }
 }

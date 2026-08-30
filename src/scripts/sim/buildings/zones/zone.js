@@ -44,6 +44,25 @@ export class Zone extends Building {
 
     let mesh = window.assetManager.getModel(modelName, this);
 
+    // Tint damaged buildings by disaster type
+    if (this.development.state === DevelopmentState.damaged) {
+      const tints = {
+        fire: 0x994422,
+        earthquake: 0x666666,
+        flood: 0x336699,
+        tornado: 0x777788,
+        meteor: 0x993333,
+        blizzard: 0x8899bb,
+        drought: 0x998844,
+      };
+      const tint = tints[this.development.damageType] || 0x884444;
+      mesh.traverse((obj) => {
+        if (obj.material?.color) {
+          obj.material.color = new THREE.Color(tint);
+        }
+      });
+    }
+
     // Tint building a dark color if it is abandoned
     if (this.development.state === DevelopmentState.abandoned) {
       mesh.traverse((obj) => {

@@ -7,6 +7,7 @@ export const DISASTER_TYPES = {
     overlay: 'rgba(255,80,0,0.38)',
     shake: 0.9,
     tint: 0xff6600,
+    area: true,
   },
   earthquake: {
     id: 'earthquake',
@@ -15,6 +16,7 @@ export const DISASTER_TYPES = {
     overlay: 'rgba(90,90,90,0.42)',
     shake: 1.4,
     tint: 0x888888,
+    area: true,
   },
   flood: {
     id: 'flood',
@@ -23,14 +25,25 @@ export const DISASTER_TYPES = {
     overlay: 'rgba(0,120,220,0.38)',
     shake: 0.7,
     tint: 0x3399ff,
+    area: true,
   },
-  tornado: {
-    id: 'tornado',
-    label: 'Tornado',
-    emoji: '🌪',
-    overlay: 'rgba(140,140,170,0.4)',
-    shake: 1.1,
-    tint: 0xaaaaaa,
+  typhoon: {
+    id: 'typhoon',
+    label: 'Typhoon',
+    emoji: '🌀',
+    overlay: 'rgba(100,140,200,0.42)',
+    shake: 1.2,
+    tint: 0x6699cc,
+    area: true,
+  },
+  nuclear: {
+    id: 'nuclear',
+    label: 'Nuclear Meltdown',
+    emoji: '☢',
+    overlay: 'rgba(120,255,80,0.35)',
+    shake: 1.5,
+    tint: 0x88ff44,
+    area: true,
   },
   meteor: {
     id: 'meteor',
@@ -39,6 +52,7 @@ export const DISASTER_TYPES = {
     overlay: 'rgba(255,40,40,0.45)',
     shake: 1.6,
     tint: 0xff3300,
+    area: false,
   },
   blizzard: {
     id: 'blizzard',
@@ -47,14 +61,7 @@ export const DISASTER_TYPES = {
     overlay: 'rgba(200,220,255,0.42)',
     shake: 0.5,
     tint: 0xccddff,
-  },
-  drought: {
-    id: 'drought',
-    label: 'Drought',
-    emoji: '☀',
-    overlay: 'rgba(255,200,60,0.32)',
-    shake: 0.35,
-    tint: 0xffcc00,
+    area: false,
   },
 };
 
@@ -93,7 +100,9 @@ export const DISASTER_TYPE_IDS = Object.keys(DISASTER_TYPES);
 export const DISASTER_LEVEL_IDS = Object.keys(DISASTER_LEVELS);
 
 export function pickRandomType() {
-  return DISASTER_TYPE_IDS[Math.floor(Math.random() * DISASTER_TYPE_IDS.length)];
+  const areaTypes = DISASTER_TYPE_IDS.filter((id) => DISASTER_TYPES[id].area);
+  const pool = areaTypes.length ? areaTypes : DISASTER_TYPE_IDS;
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 export function pickRandomLevel() {

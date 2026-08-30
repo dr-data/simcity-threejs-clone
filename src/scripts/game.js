@@ -210,6 +210,10 @@ export class Game {
           }
           const tile = this.city.getTile(x, y);
           if (tile && !tile.building) {
+            if (tile.terrain === 'water') {
+              window.ui.showToast('Cannot build on water!');
+              return;
+            }
             window.budgetManager.spend(type);
             this.city.placeBuilding(x, y, type);
             window.ui.updateTitleBar(this);

@@ -818,6 +818,68 @@ a {
   color: #81b1e0;
 }
 
+.mobile-only {
+  display: none;
+}
+
+#mobile-tab-bar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 96;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  background: rgba(12, 16, 28, 0.97);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  box-sizing: border-box;
+}
+
+.mobile-tab {
+  background: rgba(40, 48, 68, 0.9);
+  color: #e8eef8;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 6px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.mobile-tab.selected {
+  background: #5a6a8a;
+  outline: 2px solid rgba(140, 170, 220, 0.5);
+}
+
+.mobile-build-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.build-chip {
+  background: #2a3348;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 12px 10px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.build-chip:active {
+  background: #4a5a78;
+}
+
+#mobile-build-sheet.open {
+  transform: translateY(0);
+  z-index: 97;
+}
+
 /* Mobile & tablet */
 @media (max-width: 900px) {
   html, body, #root-window {
@@ -832,6 +894,33 @@ a {
 
   #bottom-right-dock {
     display: none !important;
+  }
+
+  .desktop-toolbar {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: block;
+  }
+
+  #mobile-tab-bar {
+    display: grid;
+  }
+
+  #top-nav {
+    display: none;
+  }
+
+  #stats-panel {
+    top: 48px;
+    padding: 4px 8px;
+    font-size: 0.82rem;
+    gap: 2px 6px;
+  }
+
+  .stat-row.time-row {
+    font-weight: bold;
   }
 
   .mobile-view-controls {
@@ -925,133 +1014,39 @@ a {
     display: flex;
   }
 
-  .toolbar-extra {
-    display: none !important;
-  }
-
-  /* Hide left vertical toolbar on mobile */
-  #ui-toolbar {
-    position: static;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
-    gap: 4px;
-    padding: 0;
-    box-shadow: none;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-
-  #ui-toolbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  #ui-toolbar .ui-button {
-    flex: 0 0 auto;
-    margin: 0;
-    height: 46px;
-    width: 46px;
-    min-width: 46px;
-  }
-
-  #ui-toolbar .toolbar-icon {
-    width: 30px;
-    height: 30px;
-  }
-
-  #game-controls {
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 95;
-    width: 100%;
-    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
-    gap: 6px;
-    background: rgba(20, 26, 42, 0.96);
-    border-radius: 0;
-    pointer-events: auto;
-    box-sizing: border-box;
-    max-height: 28vh;
-  }
-
-  #game-controls .view-bar {
-    display: none !important;
-  }
-
-  .dock-row {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    min-width: 0;
-  }
-
-  .toolbar-scroll {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    min-width: 0;
-  }
-
-  .dock-more-btn {
-    display: block;
-    align-self: stretch;
-    width: 100%;
-    max-width: none;
-    margin: 0;
-    padding: 10px 16px;
-    background: #4a5a78;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-size: 1.1rem;
-    font-family: inherit;
-    cursor: pointer;
-  }
-
-  .view-btn-row .view-btn {
-    padding: 10px 8px;
-    font-size: 0.95rem;
-    flex: 1 1 0;
-  }
-
   #info-panel {
     top: auto;
-    bottom: calc(120px + env(safe-area-inset-bottom));
+    bottom: calc(72px + env(safe-area-inset-bottom));
     right: 6px;
     left: 6px;
     width: auto;
-    max-height: 26vh;
+    max-height: 22vh;
     overflow-y: auto;
     font-size: 1rem;
   }
 
   #cheat-console {
-    bottom: calc(130px + env(safe-area-inset-bottom));
+    bottom: calc(80px + env(safe-area-inset-bottom));
     left: 6px;
     right: 6px;
     width: auto;
   }
 
   .banner-message {
-    top: 108px;
-    font-size: 1rem;
+    top: 88px;
+    font-size: 0.95rem;
     max-width: 92vw;
     text-align: center;
     padding: 10px 14px;
   }
 
   .banner-message.toast {
-    bottom: calc(130px + env(safe-area-inset-bottom));
+    bottom: calc(80px + env(safe-area-inset-bottom));
     top: auto;
   }
 
   .slide-panel {
-    max-height: 55vh;
+    max-height: 50vh;
   }
 
   .action-label {
@@ -1107,6 +1102,11 @@ a {
   }
 
   #more-panel {
+    display: none !important;
+  }
+
+  #mobile-tab-bar,
+  #mobile-build-sheet {
     display: none !important;
   }
 

@@ -116,6 +116,21 @@ export default {
     "type": "power",
     "filename": "industry-factory-old.glb"
   },
+  "power-plant-petroleum": {
+    "type": "power",
+    "filename": "industry-factory-old.glb",
+    "scale": 1.1
+  },
+  "power-plant-nuclear": {
+    "type": "power",
+    "filename": "data-center.glb",
+    "scale": 1.3
+  },
+  "fire-station": {
+    "type": "service",
+    "filename": "building-cinema.glb",
+    "scale": 0.9
+  },
   "power-line": {
     "type": "power",
     "filename": "power_line_pole_modified.glb"

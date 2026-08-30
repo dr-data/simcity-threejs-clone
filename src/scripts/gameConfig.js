@@ -31,6 +31,9 @@ const defaults = {
     industrial: 200,
     road: 50,
     'power-plant': 500,
+    'power-plant-petroleum': 450,
+    'power-plant-nuclear': 900,
+    'fire-station': 350,
     'power-line': 25,
   },
   reflectionPrompts: [

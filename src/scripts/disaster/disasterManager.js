@@ -7,9 +7,10 @@ import {
   pickRandomLevel,
 } from './disasterConfig.js';
 import { DisasterAnimationManager } from './disasterAnimations.js';
+import { DisasterAreaSim } from './disasterAreaSim.js';
 
 /**
- * Random disasters with visual effects, animations, and zone damage.
+ * Disaster scheduling, area effects, and global screen feedback.
  */
 export class DisasterManager {
   disasterCount = 0;
@@ -18,16 +19,17 @@ export class DisasterManager {
   overlayEl = null;
   shakeIntensity = 0;
   animations = new DisasterAnimationManager();
+  areaSim = null;
 
   constructor(game) {
     this.game = game;
     this.overlayEl = document.getElementById('disaster-overlay');
+    this.areaSim = new DisasterAreaSim(game, this.animations);
     this.frequencyMin = 1;
     this.frequencyMax = 3;
     this.severity = 0.25;
     this._plannedDisasters = 0;
     this._nextDisasterTime = 0;
-    this._pendingDamage = 0;
   }
 
   configure(frequencyMin, frequencyMax, severity) {
@@ -51,7 +53,7 @@ export class DisasterManager {
     this.disasterCount = 0;
     this.damagedZones = 0;
     this.totalZonesAtStart = city.getDevelopedZoneCount();
-    this.animations.setScene(this.game.scene);
+    this.areaSim.attachToCity(city);
     this.configure(
       window.gameConfig?.disasterFrequencyMin ?? 1,
       window.gameConfig?.disasterFrequencyMax ?? 3,
@@ -61,6 +63,7 @@ export class DisasterManager {
 
   update() {
     this.animations.update();
+    this.areaSim.update();
 
     if (window.ui?.godMode) return;
     if (this.disasterCount >= this._plannedDisasters) return;
@@ -77,17 +80,70 @@ export class DisasterManager {
     this.triggerDisaster(pickRandomType(), pickRandomLevel());
   }
 
-  /**
-   * @param {string} type
-   * @param {string} level
-   */
   triggerDisaster(type, level = 'moderate') {
-    // Ensure scene ref is current (city re-init clears children but keeps scene)
-    this.animations.setScene(this.game.scene);
+    this.areaSim.attachToCity(this.game.city);
 
     const typeMeta = DISASTER_TYPES[type] || DISASTER_TYPES.fire;
     const levelMeta = DISASTER_LEVELS[level] || DISASTER_LEVELS.moderate;
 
+    this._playEffects(type, level, 1, typeMeta, levelMeta);
+
+    let ok = false;
+    let messageExtra = '';
+
+    switch (type) {
+      case 'flood':
+        ok = this.areaSim.startFlood(level);
+        break;
+      case 'fire':
+        ok = this.areaSim.startFire(level);
+        break;
+      case 'typhoon':
+        ok = this.areaSim.startTyphoon(level);
+        break;
+      case 'earthquake':
+        const eq = this.areaSim.runEarthquake(level);
+        ok = eq.damaged > 0;
+        messageExtra = `${eq.damaged} structures hit, ${eq.fires} fires started`;
+        break;
+      case 'nuclear':
+        const plants = this.game.city.getNuclearPlants();
+        if (plants.length === 0) {
+          window.ui?.showToast('Build a nuclear plant first (or use petroleum only).');
+          return;
+        }
+        const p = plants[Math.floor(Math.random() * plants.length)];
+        ok = this.areaSim.startMeltdown(p.x, p.y, level);
+        messageExtra = 'Radioactive zone — area uninhabitable!';
+        break;
+      default:
+        ok = this.#triggerInstant(type, level, typeMeta, levelMeta);
+        break;
+    }
+
+    this._showMessage(type, level, typeMeta, levelMeta, messageExtra);
+
+    if (!ok && type !== 'earthquake') {
+      window.ui?.showToast('Disaster could not start — check map conditions.');
+      return;
+    }
+
+    this.disasterCount++;
+    this._scheduleNext();
+    this._finishDisasterStats();
+  }
+
+  dispatchFirefighters() {
+    const n = this.areaSim.dispatchFirefighters();
+    if (n > 0) {
+      window.ui?.showToast(`Fire crews dispatched! (${n} fire zones targeted)`);
+      return true;
+    }
+    window.ui?.showToast('No active fires to fight.');
+    return false;
+  }
+
+  #triggerInstant(type, level, typeMeta, levelMeta) {
     const city = this.game.city;
     const zones = [];
     for (let x = 0; x < city.size; x++) {
@@ -105,54 +161,35 @@ export class DisasterManager {
         }
       }
     }
-    if (zones.length === 0) {
-      this._playEffects(type, level, 1, typeMeta, levelMeta);
-      this._showMessage(type, level, 0, typeMeta, levelMeta);
-      window.ui?.showToast('No zones to hit — place residential, commercial, or industrial zones first.');
-      return;
-    }
+    if (zones.length === 0) return false;
 
     const severity = Math.min(0.85, this.severity * (levelMeta.severityMult / 0.25));
     const hitCount = Math.max(1, Math.floor(zones.length * severity));
     const developed = zones.filter(
       (t) => t.building.development?.state === DevelopmentState.developed
     );
-    const targetPool = developed.length > 0 ? developed : zones;
-    const shuffled = [...targetPool].sort(() => Math.random() - 0.5).slice(0, hitCount);
+    const pool = developed.length > 0 ? developed : zones;
+    const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, hitCount);
 
     let completed = 0;
-
-    const onOneDamaged = () => {
-      this.damagedZones++;
-      completed++;
-      if (completed >= shuffled.length) {
-        this._finishDisaster(type, level, hitCount, typeMeta, levelMeta);
-      }
-    };
-
-    // Play screen effects immediately
-    this._playEffects(type, level, hitCount, typeMeta, levelMeta);
-    this._showMessage(type, level, hitCount, typeMeta, levelMeta);
-
     shuffled.forEach((tile, i) => {
-      const zone = tile.building;
-      const delay = i * 80;
       setTimeout(() => {
         this.animations.animateDamage(
-          zone,
+          tile.building,
           type,
           level,
           levelMeta.repairTicks,
-          onOneDamaged
+          () => {
+            this.damagedZones++;
+            completed++;
+          }
         );
-      }, delay);
+      }, i * 80);
     });
+    return true;
   }
 
-  _finishDisaster(type, level, hitCount, typeMeta, levelMeta) {
-    this.disasterCount++;
-    this._scheduleNext();
-
+  _finishDisasterStats() {
     const city = this.game.city;
     const resilience = city.getDisasterResilience();
     const damagePercent = 100 - resilience;
@@ -174,14 +211,15 @@ export class DisasterManager {
     }
   }
 
-  _showMessage(type, level, hitCount, typeMeta, levelMeta) {
+  _showMessage(type, level, typeMeta, levelMeta, extra = '') {
     const el = document.getElementById('disaster-message');
     if (!el) return;
-    const hitText =
-      hitCount === 0
-        ? 'No zones in range — build zones to see destruction!'
-        : `${hitCount} zones hit — buildings collapsing!`;
-    el.textContent = `${typeMeta.emoji} ${typeMeta.label} (${levelMeta.label})! ${hitText}`;
+    const detail =
+      extra ||
+      (DISASTER_TYPES[type]?.area
+        ? 'Watch affected areas on the map!'
+        : 'Zones damaged!');
+    el.textContent = `${typeMeta.emoji} ${typeMeta.label} (${levelMeta.label})! ${detail}`;
     el.style.visibility = 'visible';
     setTimeout(() => {
       el.style.visibility = 'hidden';

@@ -95,7 +95,39 @@
         <div class="stat-row time-row"><span>Time</span><span id="stat-time">15:00</span></div>
       </div>
 
-      <div id="game-controls" class="container">
+      <div id="mobile-tab-bar" class="mobile-only">
+        <button type="button" class="mobile-tab selected" data-tool="select" onclick="ui.mobileSelectTool('select')">
+          <span>Select</span>
+        </button>
+        <button type="button" class="mobile-tab" data-tool="build" onclick="ui.toggleMobileBuildSheet()">
+          <span>Build</span>
+        </button>
+        <button type="button" class="mobile-tab" data-tool="road" onclick="ui.mobileSelectTool('road')">
+          <span>Road</span>
+        </button>
+        <button type="button" class="mobile-tab" data-tool="menu" onclick="ui.toggleMorePanel()">
+          <span>Menu</span>
+        </button>
+      </div>
+
+      <div id="mobile-build-sheet" class="slide-panel mobile-only" aria-hidden="true">
+        <div class="slide-panel-header">
+          <span>Build</span>
+          <button type="button" class="nav-icon-btn" onclick="ui.toggleMobileBuildSheet(false)">✕</button>
+        </div>
+        <div class="mobile-build-grid">
+          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('residential')">🏠 Residential</button>
+          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('commercial')">🏪 Commercial</button>
+          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('industrial')">🏭 Industrial</button>
+          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('power-plant-petroleum')">🛢 Petroleum</button>
+          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('power-plant-nuclear')">☢ Nuclear</button>
+          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('fire-station')">🚒 Fire Station</button>
+          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('power-line')">⚡ Power Line</button>
+          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('bulldoze')">🚧 Bulldoze</button>
+        </div>
+      </div>
+
+      <div id="game-controls" class="container desktop-toolbar">
         <div id="ui-toolbar" class="dock-row toolbar-scroll">
           <button id="button-select" class="ui-button selected" data-type="select" onclick="ui.onToolSelected(event)">
             <img class="toolbar-icon" src="/icons/select-color.png" alt="Select">
@@ -115,8 +147,14 @@
           <button id="button-road" class="ui-button" data-type="road" onclick="ui.onToolSelected(event)">
             <img class="toolbar-icon" src="/icons/road-color.png" alt="Road">
           </button>
-          <button id="button-power-plant" class="ui-button" data-type="power-plant" onclick="ui.onToolSelected(event)">
-            <img class="toolbar-icon" src="/icons/power-color.png" alt="Power plant">
+          <button id="button-power-petroleum" class="ui-button" data-type="power-plant-petroleum" onclick="ui.onToolSelected(event)" title="Petroleum plant (120 kW)">
+            <span class="god-icon">Oil</span>
+          </button>
+          <button id="button-power-nuclear" class="ui-button" data-type="power-plant-nuclear" onclick="ui.onToolSelected(event)" title="Nuclear plant (280 kW)">
+            <span class="god-icon">Nuc</span>
+          </button>
+          <button id="button-fire-station" class="ui-button" data-type="fire-station" onclick="ui.onToolSelected(event)" title="Fire station">
+            <span class="god-icon">Fire</span>
           </button>
           <button id="button-power-line" class="ui-button" data-type="power-line" onclick="ui.onToolSelected(event)">
             <img class="toolbar-icon" src="/icons/power-line-color.png" alt="Power line">
@@ -146,6 +184,7 @@
           <span class="dock-label">Disaster</span>
           <select id="disaster-type-select" class="dock-select" aria-label="Disaster type"></select>
           <select id="disaster-level-select" class="dock-select" aria-label="Disaster level"></select>
+          <button type="button" class="action-btn small" onclick="ui.onFireDispatch()">Dispatch Fire Crews ($150)</button>
           <button type="button" class="action-btn small" onclick="ui.onDisaster()">Trigger</button>
         </div>
       </div>
@@ -171,6 +210,7 @@
           <label class="action-label">Template</label>
           <select id="template-select" onchange="ui.onTemplateChange(event)"></select>
           <div class="action-btn-row mobile-more-actions">
+            <button type="button" class="action-btn small" onclick="ui.onFireDispatch()">Fire Dispatch</button>
             <button type="button" class="action-btn small" id="more-btn-god" onclick="ui.toggleGodMode()">GOD Mode</button>
             <button type="button" class="action-btn small" onclick="ui.onDisaster()">Trigger Disaster</button>
             <button type="button" class="action-btn small" onclick="ui.togglePause()">Pause</button>

@@ -284,6 +284,65 @@ export class GameUI {
     }
   }
 
+  onFireDispatch() {
+    const cost = 150;
+    if (!window.ui?.godMode && window.budgetManager.budget < cost) {
+      this.showToast(`Need $${cost} for fire dispatch (or GOD mode).`);
+      return;
+    }
+    if (!window.ui?.godMode) {
+      window.budgetManager.budget -= cost;
+      window.ui.updateTitleBar(window.game);
+    }
+    window.disasterManager?.dispatchFirefighters();
+  }
+
+  mobileSelectTool(toolId) {
+    this.toggleMobileBuildSheet(false);
+    this.toggleMorePanel(false);
+    this.activeToolId = toolId;
+
+    const idMap = {
+      select: 'button-select',
+      bulldoze: 'button-bulldoze',
+      residential: 'button-residential',
+      commercial: 'button-commercial',
+      industrial: 'button-industrial',
+      road: 'button-road',
+      'power-plant-petroleum': 'button-power-petroleum',
+      'power-plant-nuclear': 'button-power-nuclear',
+      'fire-station': 'button-fire-station',
+      'power-line': 'button-power-line',
+    };
+    const btnId = idMap[toolId];
+    const btn = btnId ? document.getElementById(btnId) : null;
+    if (btn) {
+      if (this.selectedControl) this.selectedControl.classList.remove('selected');
+      this.selectedControl = btn;
+      btn.classList.add('selected');
+    }
+
+    document.querySelectorAll('.mobile-tab').forEach((t) => {
+      const match =
+        t.dataset.tool === toolId ||
+        (toolId === 'road' && t.dataset.tool === 'road') ||
+        (toolId === 'select' && t.dataset.tool === 'select');
+      t.classList.toggle('selected', match);
+    });
+  }
+
+  toggleMobileBuildSheet(forceOpen) {
+    const sheet = document.getElementById('mobile-build-sheet');
+    if (!sheet) return;
+    const open =
+      forceOpen === true || forceOpen === false
+        ? forceOpen
+        : !sheet.classList.contains('open');
+    sheet.classList.toggle('open', open);
+    sheet.setAttribute('aria-hidden', open ? 'false' : 'true');
+    if (open) this.toggleMorePanel(false);
+  }
+
   onDisaster() {
     const type =
       document.getElementById('disaster-type-select')?.value ||

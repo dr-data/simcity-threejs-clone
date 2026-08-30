@@ -70,6 +70,79 @@ export class City extends THREE.Group {
     
     this.vehicleGraph = new VehicleGraph(this.size);
     this.debugMeshes.add(this.vehicleGraph);
+
+    this.#initWaterEdges();
+  }
+
+  #initWaterEdges() {
+    for (let x = 0; x < this.size; x++) {
+      for (let y = 0; y < this.size; y++) {
+        if (x === 0 || y === 0 || x === this.size - 1 || y === this.size - 1) {
+          const tile = this.tiles[x][y];
+          tile.terrain = 'water';
+          tile.refreshView(this);
+        }
+      }
+    }
+  }
+
+  isWater(x, y) {
+    const tile = this.getTile(x, y);
+    return tile?.terrain === 'water';
+  }
+
+  /** Land tiles adjacent to water (flood origins) */
+  getWaterfrontTiles() {
+    const tiles = [];
+    for (let x = 0; x < this.size; x++) {
+      for (let y = 0; y < this.size; y++) {
+        const tile = this.getTile(x, y);
+        if (!tile || tile.terrain === 'water') continue;
+        const neighbors = this.getTileNeighbors(x, y);
+        if (neighbors.some((n) => n?.terrain === 'water')) {
+          tiles.push(tile);
+        }
+      }
+    }
+    return tiles;
+  }
+
+  getTileNeighbors(x, y) {
+    return [
+      this.getTile(x - 1, y),
+      this.getTile(x + 1, y),
+      this.getTile(x, y - 1),
+      this.getTile(x, y + 1),
+    ];
+  }
+
+  countFireStationsNear(x, y, radius = 4) {
+    let count = 0;
+    for (let dx = -radius; dx <= radius; dx++) {
+      for (let dy = -radius; dy <= radius; dy++) {
+        if (Math.abs(dx) + Math.abs(dy) > radius) continue;
+        const b = this.getTile(x + dx, y + dy)?.building;
+        if (b?.type === BuildingType.fireStation) count++;
+      }
+    }
+    return count;
+  }
+
+  getNuclearPlants() {
+    const plants = [];
+    for (let x = 0; x < this.size; x++) {
+      for (let y = 0; y < this.size; y++) {
+        const b = this.getTile(x, y)?.building;
+        if (b?.type === BuildingType.powerPlantNuclear) {
+          plants.push({ x, y, building: b });
+        }
+      }
+    }
+    return plants;
+  }
+
+  tileKey(x, y) {
+    return `${x},${y}`;
   }
 
   /**
@@ -140,7 +213,7 @@ export class City extends THREE.Group {
     for (let x = 0; x < this.size; x++) {
       for (let y = 0; y < this.size; y++) {
         const b = this.getTile(x, y).building;
-        if (b?.type === BuildingType.powerPlant) {
+        if (b?.type === BuildingType.powerPlant || b?.type === BuildingType.powerPlantPetroleum || b?.type === BuildingType.powerPlantNuclear) {
           capacity += b.powerCapacity ?? 0;
         }
         if (b?.power?.required) {
@@ -247,21 +320,19 @@ export class City extends THREE.Group {
   placeBuilding(x, y, buildingType) {
     const tile = this.getTile(x, y);
 
-    // If the tile doesnt' already have a building, place one there
-    if (tile && !tile.building) {
-      tile.setBuilding(createBuilding(x, y, buildingType));
-      tile.refreshView(this);
-      
-      // Update buildings on adjacent tile in case they need to
-      // change their mesh (e.g. roads)
-      this.getTile(x - 1, y)?.refreshView(this);
-      this.getTile(x + 1, y)?.refreshView(this);
-      this.getTile(x, y - 1)?.refreshView(this);
-      this.getTile(x, y + 1)?.refreshView(this);
+    if (!tile || tile.building) return;
+    if (tile.terrain === 'water') return;
 
-      if (tile.building.type === BuildingType.road) {
-        this.vehicleGraph.updateTile(x, y, tile.building);
-      }
+    tile.setBuilding(createBuilding(x, y, buildingType));
+    tile.refreshView(this);
+
+    this.getTile(x - 1, y)?.refreshView(this);
+    this.getTile(x + 1, y)?.refreshView(this);
+    this.getTile(x, y - 1)?.refreshView(this);
+    this.getTile(x, y + 1)?.refreshView(this);
+
+    if (tile.building.type === BuildingType.road) {
+      this.vehicleGraph.updateTile(x, y, tile.building);
     }
   }
 

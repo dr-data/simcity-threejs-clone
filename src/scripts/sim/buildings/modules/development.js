@@ -116,6 +116,11 @@ export class DevelopmentModule extends SimModule {
    * @param {City} city 
    */
   simulate(city) {
+    const tile = city.getTile(this.#zone.x, this.#zone.y);
+    if (tile?.isRadioactive) {
+      return;
+    }
+
     this.#checkAbandonmentCriteria();
 
     switch (this.state) {

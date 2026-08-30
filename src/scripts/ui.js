@@ -13,6 +13,7 @@ import {
   DISASTER_TYPE_IDS,
   DISASTER_LEVEL_IDS,
 } from './disaster/disasterConfig.js';
+import { TOOL_TIPS, formatToolHint } from './toolTips.js';
 
 const SIM_START_DATE = gameConfig.simStartDate || '2026-09-01';
 
@@ -43,7 +44,92 @@ export class GameUI {
     }
     this.selectedControl = btn;
     this.selectedControl.classList.add('selected');
-    this.activeToolId = this.selectedControl.getAttribute('data-type');
+    const type = this.selectedControl.getAttribute('data-type');
+    if (type) {
+      this.activeToolId = type;
+      this.updateToolHint(type);
+    }
+  }
+
+  updateToolHint(toolId = this.activeToolId) {
+    const bar = document.getElementById('tool-hint-bar');
+    if (!bar) return;
+    const hint = formatToolHint(toolId);
+    bar.textContent = hint;
+    bar.dataset.tool = toolId;
+  }
+
+  initTooltips() {
+    document.querySelectorAll('[data-tool]').forEach((el) => {
+      const id = el.getAttribute('data-tool');
+      const meta = TOOL_TIPS[id];
+      if (!meta) return;
+      const cost = meta.cost != null ? ` ($${meta.cost})` : '';
+      el.setAttribute('title', `${meta.name}${cost}: ${meta.tip}`);
+      el.setAttribute('aria-label', meta.name);
+    });
+
+    document.querySelectorAll('.ui-button[data-type]').forEach((btn) => {
+      const id = btn.getAttribute('data-type');
+      const meta = TOOL_TIPS[id];
+      if (!meta) return;
+      const cost = meta.cost != null ? ` ($${meta.cost})` : '';
+      btn.setAttribute('title', `${meta.name}${cost}: ${meta.tip}`);
+      btn.setAttribute('aria-label', meta.name);
+    });
+
+    const pauseBtn = document.getElementById('button-pause');
+    if (pauseBtn) {
+      pauseBtn.setAttribute('title', 'Pause or resume the simulation');
+      pauseBtn.setAttribute('aria-label', 'Pause');
+    }
+
+    const godBtn = document.getElementById('button-god');
+    if (godBtn) {
+      godBtn.setAttribute('title', 'GOD mode — free building and disasters');
+      godBtn.setAttribute('aria-label', 'GOD mode');
+    }
+
+    const disasterBtn = document.getElementById('button-disaster');
+    if (disasterBtn) {
+      disasterBtn.setAttribute('title', 'Trigger the selected disaster type');
+      disasterBtn.setAttribute('aria-label', 'Trigger disaster');
+    }
+
+    this.updateToolHint('select');
+  }
+
+  _syncBackdrop() {
+    const backdrop = document.getElementById('ui-backdrop');
+    if (!backdrop) return;
+    const panelOpen =
+      document.getElementById('more-panel')?.classList.contains('open') ||
+      document.getElementById('mobile-build-sheet')?.classList.contains('open') ||
+      document.getElementById('info-panel')?.classList.contains('open');
+    backdrop.classList.toggle('visible', panelOpen);
+    document.body.classList.toggle('panel-open', panelOpen);
+  }
+
+  closeInspector() {
+    const infoElement = document.getElementById('info-panel');
+    if (infoElement) {
+      infoElement.classList.remove('open');
+      infoElement.innerHTML = '';
+      infoElement.setAttribute('aria-hidden', 'true');
+    }
+    document.getElementById('mobile-stats-strip')?.classList.remove('collapsed');
+    document.body.classList.remove('inspector-open');
+    this._syncBackdrop();
+    if (window.game?.selectedObject) {
+      window.game.selectedObject.setSelected(false);
+      window.game.selectedObject = null;
+    }
+  }
+
+  closeAllPanels() {
+    this.toggleMorePanel(false);
+    this.toggleMobileBuildSheet(false);
+    this.closeInspector();
   }
 
   togglePause() {
@@ -119,13 +205,28 @@ export class GameUI {
 
   updateInfoPanel(object) {
     const infoElement = document.getElementById('info-panel');
+    const mobileStrip = document.getElementById('mobile-stats-strip');
+    if (!infoElement) return;
+
     if (object) {
-      infoElement.style.visibility = 'visible';
-      infoElement.innerHTML = object.toHTML();
+      infoElement.classList.add('open');
+      infoElement.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('inspector-open');
+      infoElement.innerHTML = `
+        <div class="inspector-header">
+          <span class="inspector-title">Tile / Building</span>
+          <button type="button" class="inspector-close" onclick="ui.closeInspector()" aria-label="Close details">✕</button>
+        </div>
+        <div class="inspector-body">${object.toHTML()}</div>
+      `;
+      if (mobileStrip) mobileStrip.classList.add('collapsed');
+      this.toggleMorePanel(false);
+      this.toggleMobileBuildSheet(false);
     } else {
-      infoElement.style.visibility = 'hidden';
-      infoElement.innerHTML = '';
+      this.closeInspector();
+      return;
     }
+    this._syncBackdrop();
   }
 
   showMilestone(milestone) {
@@ -209,9 +310,20 @@ export class GameUI {
   toggleMorePanel(forceOpen) {
     const panel = document.getElementById('more-panel');
     if (!panel) return;
-    const open = forceOpen === true || forceOpen === false ? forceOpen : !panel.classList.contains('open');
+    const open =
+      forceOpen === true || forceOpen === false
+        ? forceOpen
+        : !panel.classList.contains('open');
     panel.classList.toggle('open', open);
     panel.setAttribute('aria-hidden', open ? 'false' : 'true');
+    if (open) {
+      this.toggleMobileBuildSheet(false);
+      this.closeInspector();
+    }
+    document.querySelectorAll('.mobile-tab').forEach((t) => {
+      t.classList.toggle('selected', open && t.dataset.tool === 'menu');
+    });
+    this._syncBackdrop();
   }
 
   syncTemplateSelects() {
@@ -305,8 +417,9 @@ export class GameUI {
 
   mobileSelectTool(toolId) {
     this.toggleMobileBuildSheet(false);
-    this.toggleMorePanel(false);
+    if (toolId !== 'menu') this.toggleMorePanel(false);
     this.activeToolId = toolId;
+    this.updateToolHint(toolId);
 
     const idMap = {
       select: 'button-select',
@@ -346,7 +459,11 @@ export class GameUI {
         : !sheet.classList.contains('open');
     sheet.classList.toggle('open', open);
     sheet.setAttribute('aria-hidden', open ? 'false' : 'true');
-    if (open) this.toggleMorePanel(false);
+    if (open) {
+      this.toggleMorePanel(false);
+      this.closeInspector();
+    }
+    this._syncBackdrop();
   }
 
   onDisaster() {
@@ -451,4 +568,5 @@ export class GameUI {
 window.ui = new GameUI();
 window.ui.populateTemplates();
 window.ui.populateDisasterOptions();
+window.ui.initTooltips();
 initTutorial();

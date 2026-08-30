@@ -25,6 +25,64 @@ h1 {
   height: 100%;
 }
 
+#ui {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 90;
+}
+
+#ui > header,
+#ui > nav,
+#ui > #stats-panel,
+#ui > #info-panel,
+#ui > #mobile-tab-bar,
+#ui > .slide-panel,
+#ui > #game-controls,
+#ui > #bottom-right-dock,
+#ui > #tool-hint-bar,
+#ui > #instructions,
+#ui > #version,
+#ui > .ui-backdrop.visible {
+  pointer-events: auto;
+}
+
+.ui-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s;
+  z-index: 97;
+  pointer-events: none;
+}
+
+.ui-backdrop.visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.tool-hint-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 108px;
+  z-index: 93;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: #c8d8f0;
+  background: rgba(10, 14, 28, 0.92);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.hide-on-mobile {
+  display: block;
+}
+
 #render-target {
   position: relative;
   height: 100%;
@@ -90,7 +148,7 @@ h1 {
 
 #game-controls {
   position: absolute;
-  top: 88px;
+  top: 148px;
   left: 0;
   bottom: 0;
   width: 56px;
@@ -404,18 +462,78 @@ h1 {
   margin-left: 4px;
 }
 
-/* INFO PANEL */
+/* INFO / INSPECTOR PANEL */
+
+.inspector-panel {
+  display: none;
+  position: fixed;
+  right: 8px;
+  bottom: 8px;
+  width: 300px;
+  max-width: calc(100vw - 16px);
+  max-height: 38vh;
+  overflow: hidden;
+  background: rgba(10, 14, 28, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  z-index: 85;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.inspector-panel.open {
+  display: block;
+}
+
+.inspector-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.35);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.inspector-title {
+  font-size: 0.95rem;
+  color: #e8eef8;
+  letter-spacing: 0.04em;
+}
+
+.inspector-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(60, 70, 95, 0.9);
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.inspector-body {
+  padding: 0 0 12px;
+  max-height: calc(38vh - 44px);
+  overflow-y: auto;
+  font-size: 0.9rem;
+}
+
+.inspector-body .info-heading {
+  font-size: 0.95rem;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.inspector-body .info-label {
+  font-size: 0.85rem;
+}
+
+.inspector-body .info-value {
+  font-size: 1rem;
+}
 
 #info-panel {
-  visibility: hidden;
-  position: fixed;
-  top: 88px;
-  right: 0px;
-  padding: 0; 
-  padding-bottom: 16px;
-  width: 300px;
-
-  background-color: #00000048;
+  /* legacy alias */
 }
 
 .info-heading {
@@ -495,7 +613,7 @@ h1 {
 
 .banner-message {
   position: fixed;
-  top: 96px;
+  top: 160px;
   left: 50%;
   transform: translateX(-50%);
   background: rgba(20, 26, 42, 0.95);
@@ -520,7 +638,7 @@ h1 {
 
 #top-nav {
   position: fixed;
-  top: 88px;
+  top: 108px;
   right: 8px;
   display: flex;
   gap: 14px;
@@ -535,10 +653,10 @@ h1 {
 
 #stats-panel {
   position: fixed;
-  top: 88px;
+  top: 148px;
   right: 8px;
-  width: 240px;
-  z-index: 80;
+  width: 220px;
+  z-index: 82;
   font-size: 1.05rem;
   color: white;
 }
@@ -687,9 +805,40 @@ h1 {
   font-family: inherit;
 }
 
-.god-icon {
-  color: white;
-  font-size: 0.75em;
+.ui-button[data-type]:hover::after,
+.build-chip[data-tool]:hover::after {
+  content: attr(title);
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translate(8px, -50%);
+  background: rgba(10, 14, 28, 0.96);
+  color: #e8eef8;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  white-space: nowrap;
+  max-width: 220px;
+  white-space: normal;
+  width: max-content;
+  max-width: 240px;
+  z-index: 200;
+  pointer-events: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.ui-button,
+.build-chip {
+  position: relative;
+}
+
+.build-chip[data-tool]:hover::after {
+  left: 50%;
+  top: auto;
+  bottom: 100%;
+  transform: translate(-50%, -6px);
 }
 
 .modal-overlay {
@@ -1000,8 +1149,12 @@ a {
     overflow: hidden;
   }
 
-  .desktop-only-inline {
+  .desktop-only-inline,
+  .hide-on-mobile,
+  #stats-panel {
     display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
   }
 
   .mobile-only {
@@ -1016,19 +1169,64 @@ a {
     display: flex;
   }
 
+  .mobile-stats.collapsed {
+    display: none !important;
+  }
+
   #instructions, #version {
     display: none;
   }
 
   #bottom-right-dock,
-  .desktop-toolbar,
-  #stats-panel,
-  #top-nav {
+  .desktop-toolbar {
     display: none !important;
   }
 
   #mobile-tab-bar {
     display: grid;
+  }
+
+  .tool-hint-bar {
+    top: 100px;
+    bottom: auto;
+    font-size: 0.78rem;
+    padding: 5px 10px;
+    z-index: 93;
+  }
+
+  .inspector-panel.open ~ .tool-hint-bar,
+  body.inspector-open .tool-hint-bar {
+    display: none;
+  }
+
+  .inspector-panel {
+    left: 0;
+    right: 0;
+    bottom: calc(52px + env(safe-area-inset-bottom));
+    width: auto;
+    max-width: none;
+    max-height: 30vh;
+    border-radius: 12px 12px 0 0;
+    z-index: 99;
+  }
+
+  body.panel-open .inspector-panel.open {
+    bottom: 0;
+    max-height: 45vh;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .inspector-body {
+    max-height: calc(30vh - 44px);
+  }
+
+  body.panel-open .inspector-body {
+    max-height: calc(45vh - 44px);
+  }
+
+  .ui-button[data-type]:hover::after,
+  .build-chip[data-tool]:hover::after {
+    display: none;
   }
 
   .app-title {
@@ -1069,17 +1267,6 @@ a {
     font-size: 2.5em;
   }
 
-  #info-panel {
-    top: auto;
-    bottom: calc(72px + env(safe-area-inset-bottom));
-    right: 6px;
-    left: 6px;
-    width: auto;
-    max-height: 22vh;
-    overflow-y: auto;
-    font-size: 1rem;
-  }
-
   #cheat-console {
     bottom: calc(80px + env(safe-area-inset-bottom));
     left: 6px;
@@ -1088,21 +1275,29 @@ a {
   }
 
   .banner-message {
-    top: 76px;
-    font-size: 0.95rem;
+    top: 72px;
+    font-size: 0.9rem;
     max-width: 92vw;
     text-align: center;
-    padding: 10px 14px;
+    padding: 8px 12px;
+    z-index: 101;
   }
 
   .banner-message.toast {
-    bottom: calc(80px + env(safe-area-inset-bottom));
+    bottom: calc(88px + env(safe-area-inset-bottom));
     top: auto;
   }
 
   .slide-panel {
     max-height: 55vh;
-    bottom: calc(56px + env(safe-area-inset-bottom));
+    bottom: 0;
+    z-index: 100;
+    padding-bottom: calc(52px + env(safe-area-inset-bottom));
+    border-radius: 12px 12px 0 0;
+  }
+
+  .slide-panel.open {
+    transform: translateY(0);
   }
 
   .action-label {
@@ -1132,7 +1327,7 @@ a {
 @media (min-width: 901px) {
   #game-controls {
     position: absolute;
-    top: 88px;
+    top: 148px;
     left: 0;
     bottom: 0;
     width: 60px;
@@ -1157,6 +1352,15 @@ a {
 
   #top-nav {
     display: flex;
+  }
+
+  .inspector-panel {
+    bottom: 100px;
+    max-height: 36vh;
+  }
+
+  .tool-hint-bar {
+    top: 108px;
   }
 
   #bottom-right-dock {

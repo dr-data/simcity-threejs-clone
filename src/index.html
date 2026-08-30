@@ -63,6 +63,8 @@
     </div>
 
     <div id="ui">
+      <div id="ui-backdrop" class="ui-backdrop" onclick="ui.closeAllPanels()" aria-hidden="true"></div>
+
       <header id="game-header">
         <div class="header-top">
           <div class="app-brand">
@@ -99,6 +101,8 @@
         </div>
       </header>
 
+      <div id="tool-hint-bar" class="tool-hint-bar" aria-live="polite"></div>
+
       <nav id="top-nav" class="desktop-only-inline">
         <a href="/login.html" id="nav-login">Login</a>
         <span id="nav-user">Guest</span>
@@ -108,7 +112,7 @@
         <button type="button" id="settings-btn" class="nav-icon-btn" onclick="ui.openSettings()" title="Settings">⚙</button>
       </nav>
 
-      <div id="stats-panel" class="container desktop-only-inline">
+      <div id="stats-panel" class="container desktop-only hide-on-mobile" aria-hidden="true">
         <div class="stat-row"><span>Residents</span><span id="stat-residents">0</span></div>
         <div class="stat-row"><span>Zones</span><span id="stat-zones">0</span></div>
         <div class="stat-row"><span>Power</span><span id="stat-power">0/0 kW</span></div>
@@ -141,28 +145,28 @@
           <button type="button" class="nav-icon-btn" onclick="ui.toggleMobileBuildSheet(false)">✕</button>
         </div>
         <div class="mobile-build-grid">
-          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('residential')">
+          <button type="button" class="build-chip" data-tool="residential" onclick="ui.mobileSelectTool('residential')">
             <img src="/icons/house-color.png" alt="" class="build-chip-icon"> Residential
           </button>
-          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('commercial')">
+          <button type="button" class="build-chip" data-tool="commercial" onclick="ui.mobileSelectTool('commercial')">
             <img src="/icons/store-color.png" alt="" class="build-chip-icon"> Commercial
           </button>
-          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('industrial')">
+          <button type="button" class="build-chip" data-tool="industrial" onclick="ui.mobileSelectTool('industrial')">
             <img src="/icons/factory-color.png" alt="" class="build-chip-icon"> Industrial
           </button>
-          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('power-plant-petroleum')">
+          <button type="button" class="build-chip" data-tool="power-plant-petroleum" onclick="ui.mobileSelectTool('power-plant-petroleum')">
             <img src="/icons/petroleum-color.svg" alt="" class="build-chip-icon"> Petroleum
           </button>
-          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('power-plant-nuclear')">
+          <button type="button" class="build-chip" data-tool="power-plant-nuclear" onclick="ui.mobileSelectTool('power-plant-nuclear')">
             <img src="/icons/nuclear-color.svg" alt="" class="build-chip-icon"> Nuclear
           </button>
-          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('fire-station')">
+          <button type="button" class="build-chip" data-tool="fire-station" onclick="ui.mobileSelectTool('fire-station')">
             <img src="/icons/fire-station-color.svg" alt="" class="build-chip-icon"> Fire Station
           </button>
-          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('power-line')">
+          <button type="button" class="build-chip" data-tool="power-line" onclick="ui.mobileSelectTool('power-line')">
             <img src="/icons/power-line-color.png" alt="" class="build-chip-icon"> Power Line
           </button>
-          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('bulldoze')">
+          <button type="button" class="build-chip" data-tool="bulldoze" onclick="ui.mobileSelectTool('bulldoze')">
             <img src="/icons/bulldozer-color.png" alt="" class="build-chip-icon"> Bulldoze
           </button>
         </div>
@@ -230,10 +234,10 @@
         </div>
       </div>
 
-      <div id="more-panel" class="slide-panel" aria-hidden="true">
+      <div id="more-panel" class="slide-panel mobile-slide-panel" aria-hidden="true">
         <div class="slide-panel-header">
-          <span>Actions</span>
-          <button type="button" class="nav-icon-btn" onclick="ui.toggleMorePanel(false)">✕</button>
+          <span>Menu</span>
+          <button type="button" class="nav-icon-btn" onclick="ui.toggleMorePanel(false)" aria-label="Close menu">✕</button>
         </div>
         <div id="action-bar" class="action-bar-inner">
           <label class="action-label">Camera View</label>
@@ -265,7 +269,7 @@
         </div>
       </div>
 
-      <div id="info-panel" class="container"></div>
+      <div id="info-panel" class="inspector-panel" aria-hidden="true"></div>
 
       <div id="instructions" class="help-hint">
         <strong>Controls</strong><br>

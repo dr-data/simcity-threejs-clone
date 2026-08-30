@@ -254,6 +254,7 @@ export class DisasterAreaSim {
     for (const tile of shuffled) {
       const b = tile.building;
       if (b.type === BuildingType.road) {
+        window.disasterManager?.consequences?.recordRoadDestroyed();
         city.bulldoze(tile.x, tile.y);
       } else if (RCI.includes(b.type) && b.development) {
         zoneHits.push(tile);
@@ -382,6 +383,7 @@ export class DisasterAreaSim {
           ty.hit.add(key);
           const b = tile.building;
           if (b.type === BuildingType.road) {
+            window.disasterManager?.consequences?.recordRoadDestroyed();
             city.bulldoze(x, y);
           } else if (RCI.includes(b.type) && b.development) {
             this.animations.animateDamage(b, 'typhoon', ty.level, DISASTER_LEVELS[ty.level]?.repairTicks ?? 6, () => {});

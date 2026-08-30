@@ -194,6 +194,27 @@ export class GameUI {
     set('stat-zones-mobile', stats.developedZones);
     set('stat-power-mobile', `${stats.power.capacity}/${stats.power.demand}`);
     set('stat-resilience-mobile', `${stats.disasterResilience}%`);
+    this.updateDisasterStats();
+  }
+
+  updateDisasterStats() {
+    const snap = window.disasterManager?.consequences?.getSnapshot() ?? {
+      casualties: 0,
+      injured: 0,
+      disaster_cost: 0,
+      disaster_index: 0,
+    };
+    const set = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val;
+    };
+    set('stat-casualties', snap.casualties);
+    set('stat-injured', snap.injured);
+    set('stat-disaster-cost', `$${snap.disaster_cost}`);
+    set('stat-disaster-index', snap.disaster_index);
+    set('stat-casualties-mobile', snap.casualties);
+    set('stat-injured-mobile', snap.injured);
+    set('stat-disaster-cost-mobile', snap.disaster_cost);
   }
 
   updateTimeRemaining(time) {
@@ -352,6 +373,10 @@ export class GameUI {
     document.getElementById('end-residents').textContent = stats.residents;
     document.getElementById('end-zones').textContent = stats.developedZones;
     document.getElementById('end-resilience').textContent = `${stats.disasterResilience}%`;
+    document.getElementById('end-casualties').textContent = stats.casualties ?? 0;
+    document.getElementById('end-injured').textContent = stats.injured ?? 0;
+    document.getElementById('end-disaster-cost').textContent = `$${stats.disaster_cost ?? 0}`;
+    document.getElementById('end-disaster-index').textContent = stats.disaster_index ?? 0;
     const prompts = gameConfig.reflectionPrompts;
     const promptEl = document.getElementById('reflection-prompts');
     if (promptEl) {

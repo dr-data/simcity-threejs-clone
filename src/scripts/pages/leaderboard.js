@@ -9,7 +9,7 @@ async function load() {
       status.textContent = 'Leaderboard is temporarily hidden by admin.';
       return;
     }
-    status.textContent = `Top ${data.leaderboard.length} players`;
+    status.textContent = `Top ${data.leaderboard.length} players — disaster totals are cumulative across sessions`;
     tbody.innerHTML = data.leaderboard
       .map((row, i) => `
         <tr>
@@ -18,6 +18,9 @@ async function load() {
           <td>${row.best_score}</td>
           <td>${row.best_residents}</td>
           <td>${row.best_disaster_resilience}%</td>
+          <td>${row.total_casualties ?? 0}</td>
+          <td>${row.total_injured ?? 0}</td>
+          <td>$${row.total_disaster_cost ?? 0}</td>
           <td>${row.total_sessions}</td>
         </tr>
       `)

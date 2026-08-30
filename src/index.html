@@ -50,6 +50,10 @@
           <div><span>Residents</span><strong id="end-residents">0</strong></div>
           <div><span>Developed Zones</span><strong id="end-zones">0</strong></div>
           <div><span>Resilience</span><strong id="end-resilience">0%</strong></div>
+          <div><span>Casualties</span><strong id="end-casualties">0</strong></div>
+          <div><span>Injured</span><strong id="end-injured">0</strong></div>
+          <div><span>Disaster cost</span><strong id="end-disaster-cost">$0</strong></div>
+          <div><span>Harm index</span><strong id="end-disaster-index">0</strong></div>
         </div>
         <h3>Reflection</h3>
         <ul id="reflection-prompts" class="reflection-list"></ul>
@@ -66,11 +70,28 @@
       <div id="ui-backdrop" class="ui-backdrop" onclick="ui.closeAllPanels()" aria-hidden="true"></div>
 
       <header id="game-header">
-        <div class="header-top">
+        <div class="header-main">
           <div class="app-brand">
             <span class="app-title">Classroom SimCity</span>
             <span id="city-name" class="city-name">My City</span>
           </div>
+          <div class="header-metrics">
+            <span id="budget-counter" class="metric-pill">$5000</span>
+            <span id="sim-time" class="metric-pill desktop-only-inline">9/1/2026</span>
+            <span id="stat-time-header" class="metric-pill session-timer">15:00</span>
+            <span class="metric-pill header-pop">
+              <img id="population-icon" src="/icons/person.png" alt="">
+              <span id="population-counter">0</span>
+            </span>
+          </div>
+          <nav class="header-nav desktop-only-inline">
+            <a href="/login.html" id="nav-login">Login</a>
+            <span id="nav-user">Guest</span>
+            <a href="/leaderboard.html">Board</a>
+            <a href="/admin.html" id="nav-admin" style="display:none">Admin</a>
+            <a href="#" onclick="ui.openHelp();return false;">Help</a>
+            <button type="button" class="header-nav-btn" onclick="ui.openSettings()" title="Settings">⚙</button>
+          </nav>
           <div class="header-actions mobile-only">
             <button type="button" class="header-icon-btn" onclick="ui.openSettings()" title="Settings">
               <img src="/icons/settings-color.svg" alt="" class="header-action-icon">
@@ -80,43 +101,28 @@
             </button>
           </div>
         </div>
-        <div id="title-bar" class="header-stats">
-          <div class="title-bar-left-items title-bar-items">
-            <span id="budget-counter">$5000</span>
-          </div>
-          <div class="title-bar-center-items title-bar-items desktop-only-inline">
-            <span id="sim-time">9/1/2026</span>
-          </div>
-          <div class="title-bar-right-items title-bar-items">
-            <span id="stat-time-header" class="session-timer">15:00</span>
-            <img id="population-icon" src="/icons/person.png" alt="">
-            <span id="population-counter">0</span>
-          </div>
-        </div>
         <div id="mobile-stats-strip" class="mobile-only mobile-stats">
           <span><img src="/icons/person.png" alt="" class="mini-stat-icon"> <span id="stat-residents-mobile">0</span></span>
           <span>Zones <strong id="stat-zones-mobile">0</strong></span>
           <span>Power <strong id="stat-power-mobile">0/0</strong></span>
           <span>Safe <strong id="stat-resilience-mobile">100%</strong></span>
+          <span class="disaster-stat-mobile">☠ <strong id="stat-casualties-mobile">0</strong></span>
+          <span class="disaster-stat-mobile">🩹 <strong id="stat-injured-mobile">0</strong></span>
+          <span class="disaster-stat-mobile">$ <strong id="stat-disaster-cost-mobile">0</strong></span>
         </div>
       </header>
 
       <div id="tool-hint-bar" class="tool-hint-bar" aria-live="polite"></div>
-
-      <nav id="top-nav" class="desktop-only-inline">
-        <a href="/login.html" id="nav-login">Login</a>
-        <span id="nav-user">Guest</span>
-        <a href="/leaderboard.html">Board</a>
-        <a href="/admin.html" id="nav-admin" style="display:none">Admin</a>
-        <a href="#" onclick="ui.openHelp();return false;">Help</a>
-        <button type="button" id="settings-btn" class="nav-icon-btn" onclick="ui.openSettings()" title="Settings">⚙</button>
-      </nav>
 
       <div id="stats-panel" class="container desktop-only hide-on-mobile" aria-hidden="true">
         <div class="stat-row"><span>Residents</span><span id="stat-residents">0</span></div>
         <div class="stat-row"><span>Zones</span><span id="stat-zones">0</span></div>
         <div class="stat-row"><span>Power</span><span id="stat-power">0/0 kW</span></div>
         <div class="stat-row"><span>Resilience</span><span id="stat-resilience">100%</span></div>
+        <div class="stat-row"><span>Casualties</span><span id="stat-casualties">0</span></div>
+        <div class="stat-row"><span>Injured</span><span id="stat-injured">0</span></div>
+        <div class="stat-row"><span>Disaster cost</span><span id="stat-disaster-cost">$0</span></div>
+        <div class="stat-row"><span>Harm index</span><span id="stat-disaster-index">0</span></div>
         <div class="stat-row time-row"><span>Time</span><span id="stat-time">15:00</span></div>
       </div>
 

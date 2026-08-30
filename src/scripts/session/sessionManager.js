@@ -62,7 +62,12 @@ export class SessionManager {
     const zonePts = stats.developedZones * 15;
     const resiliencePts = Math.round(stats.disasterResilience * 3);
     const disasterBonus = this.disastersSurvived * 50;
-    return residentPts + zonePts + resiliencePts + disasterBonus;
+    const casualtyPenalty = (stats.casualties ?? 0) * 12 + (stats.injured ?? 0) * 4;
+    const costPenalty = Math.floor((stats.disaster_cost ?? 0) / 20);
+    return Math.max(
+      0,
+      residentPts + zonePts + resiliencePts + disasterBonus - casualtyPenalty - costPenalty
+    );
   }
 
   checkMilestones(stats) {
@@ -93,12 +98,18 @@ export class SessionManager {
     this.stop();
 
     const disasterResilience = stats.disasterResilience ?? 100;
+    const consequences = window.disasterManager?.consequences?.getSnapshot() ?? {};
     const sessionStats = {
       residents: stats.residents,
       developedZones: stats.developedZones,
       disasterResilience,
       disastersSurvived: this.disastersSurvived,
       durationSeconds: Math.round((Date.now() - this.startTime) / 1000),
+      casualties: consequences.casualties ?? 0,
+      injured: consequences.injured ?? 0,
+      disaster_cost: consequences.disaster_cost ?? 0,
+      zones_damaged: consequences.zones_damaged ?? 0,
+      disaster_index: consequences.disaster_index ?? 0,
     };
     sessionStats.score = this.computeScore({
       ...sessionStats,
@@ -114,6 +125,10 @@ export class SessionManager {
         disaster_resilience: sessionStats.disasterResilience,
         disasters_survived: sessionStats.disastersSurvived,
         duration_seconds: sessionStats.durationSeconds,
+        casualties: sessionStats.casualties,
+        injured: sessionStats.injured,
+        disaster_cost: sessionStats.disaster_cost,
+        zones_damaged: sessionStats.zones_damaged,
       });
     } catch {
       /* offline or not logged in — stats still shown locally */

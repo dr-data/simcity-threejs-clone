@@ -264,12 +264,28 @@ export default {
           const disasterResilience = Math.max(0, Math.min(100, parseFloat(body.disaster_resilience) || 0));
           const disastersSurvived = Math.max(0, parseInt(body.disasters_survived, 10) || 0);
           const durationSeconds = Math.max(0, parseInt(body.duration_seconds, 10) || 0);
+          const casualties = Math.max(0, parseInt(body.casualties, 10) || 0);
+          const injured = Math.max(0, parseInt(body.injured, 10) || 0);
+          const disasterCost = Math.max(0, parseInt(body.disaster_cost, 10) || 0);
+          const zonesDamaged = Math.max(0, parseInt(body.zones_damaged, 10) || 0);
 
           await env.DB.prepare(
-            `INSERT INTO game_sessions (user_id, score, residents, developed_zones, disaster_resilience, disasters_survived, duration_seconds)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`
+            `INSERT INTO game_sessions (user_id, score, residents, developed_zones, disaster_resilience, disasters_survived, casualties, injured, disaster_cost, zones_damaged, duration_seconds)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
           )
-            .bind(user.id, score, residents, developedZones, disasterResilience, disastersSurvived, durationSeconds)
+            .bind(
+              user.id,
+              score,
+              residents,
+              developedZones,
+              disasterResilience,
+              disastersSurvived,
+              casualties,
+              injured,
+              disasterCost,
+              zonesDamaged,
+              durationSeconds
+            )
             .run();
 
           const stats = await env.DB.prepare('SELECT * FROM player_stats WHERE user_id = ?')
@@ -281,11 +297,16 @@ export default {
             best_residents: Math.max(stats.best_residents, residents),
             best_developed_zones: Math.max(stats.best_developed_zones, developedZones),
             best_disaster_resilience: Math.max(stats.best_disaster_resilience, disasterResilience),
+            total_casualties: (stats.total_casualties || 0) + casualties,
+            total_injured: (stats.total_injured || 0) + injured,
+            total_disaster_cost: (stats.total_disaster_cost || 0) + disasterCost,
+            total_zones_damaged: (stats.total_zones_damaged || 0) + zonesDamaged,
             last_played: new Date().toISOString(),
           };
           await env.DB.prepare(
             `UPDATE player_stats SET total_sessions = ?, best_score = ?, best_residents = ?,
-             best_developed_zones = ?, best_disaster_resilience = ?, last_played = ? WHERE user_id = ?`
+             best_developed_zones = ?, best_disaster_resilience = ?, total_casualties = ?,
+             total_injured = ?, total_disaster_cost = ?, total_zones_damaged = ?, last_played = ? WHERE user_id = ?`
           )
             .bind(
               updates.total_sessions,
@@ -293,6 +314,10 @@ export default {
               updates.best_residents,
               updates.best_developed_zones,
               updates.best_disaster_resilience,
+              updates.total_casualties,
+              updates.total_injured,
+              updates.total_disaster_cost,
+              updates.total_zones_damaged,
               updates.last_played,
               user.id
             )
@@ -308,7 +333,9 @@ export default {
         } else {
           const rows = await env.DB.prepare(
             `SELECT u.id, u.username, ps.best_score, ps.best_residents,
-                    ps.best_developed_zones, ps.best_disaster_resilience, ps.total_sessions, ps.last_played
+                    ps.best_developed_zones, ps.best_disaster_resilience, ps.total_sessions,
+                    ps.total_casualties, ps.total_injured, ps.total_disaster_cost,
+                    ps.total_zones_damaged, ps.last_played
              FROM users u JOIN player_stats ps ON u.id = ps.user_id
              WHERE u.is_active = 1
              ORDER BY ps.best_score DESC LIMIT 100`
@@ -436,7 +463,8 @@ export default {
         } else if (path === '/api/admin/leaderboard/reset' && method === 'POST') {
           await env.DB.prepare(
             `UPDATE player_stats SET best_score = 0, best_residents = 0,
-             best_developed_zones = 0, best_disaster_resilience = 0, total_sessions = 0`
+             best_developed_zones = 0, best_disaster_resilience = 0, total_sessions = 0,
+             total_casualties = 0, total_injured = 0, total_disaster_cost = 0, total_zones_damaged = 0`
           ).run();
           await env.DB.prepare('DELETE FROM game_sessions').run();
           await auditLog(env, user.id, null, 'reset_leaderboard', {}, null);

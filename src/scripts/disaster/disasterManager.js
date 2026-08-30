@@ -8,6 +8,7 @@ import {
 } from './disasterConfig.js';
 import { DisasterAnimationManager } from './disasterAnimations.js';
 import { DisasterAreaSim } from './disasterAreaSim.js';
+import { DisasterConsequences } from './disasterConsequences.js';
 
 /**
  * Disaster scheduling, area effects, and global screen feedback.
@@ -20,6 +21,7 @@ export class DisasterManager {
   shakeIntensity = 0;
   animations = new DisasterAnimationManager();
   areaSim = null;
+  consequences = new DisasterConsequences();
 
   constructor(game) {
     this.game = game;
@@ -52,6 +54,7 @@ export class DisasterManager {
   onSessionStart(city) {
     this.disasterCount = 0;
     this.damagedZones = 0;
+    this.consequences.reset();
     this.totalZonesAtStart = city.getDevelopedZoneCount();
     this.areaSim.attachToCity(city);
     this.configure(
@@ -99,6 +102,7 @@ export class DisasterManager {
     }
 
     this._playEffects(type, level, 1, typeMeta, levelMeta);
+    this.consequences.recordDisasterTriggered();
 
     let ok = false;
     let messageExtra = '';
@@ -139,11 +143,27 @@ export class DisasterManager {
     this.disasterCount++;
     this._scheduleNext();
     this._finishDisasterStats();
+
+    const summary = this.consequences.formatSummary();
+    if (summary && summary !== 'No major harm') {
+      window.ui?.showToast(`Impact: ${summary}`);
+    }
+  }
+
+  recordBuildingDamage(building, type, level) {
+    const result = this.consequences.recordBuildingDamage(building, type, level);
+    if (building?.development) this.damagedZones++;
+    window.ui?.updateDisasterStats?.();
+    return result;
   }
 
   dispatchFirefighters() {
     const n = this.areaSim.dispatchFirefighters();
     if (n > 0) {
+      if (!window.ui?.godMode) {
+        this.consequences.addEmergencySpend(150);
+        window.ui?.updateDisasterStats?.();
+      }
       window.ui?.showToast(`Fire crews dispatched! (${n} fire zones targeted)`);
       return true;
     }

@@ -19,6 +19,10 @@ CREATE TABLE IF NOT EXISTS player_stats (
   best_residents INTEGER NOT NULL DEFAULT 0,
   best_developed_zones INTEGER NOT NULL DEFAULT 0,
   best_disaster_resilience REAL NOT NULL DEFAULT 0,
+  total_casualties INTEGER NOT NULL DEFAULT 0,
+  total_injured INTEGER NOT NULL DEFAULT 0,
+  total_disaster_cost INTEGER NOT NULL DEFAULT 0,
+  total_zones_damaged INTEGER NOT NULL DEFAULT 0,
   last_played TEXT
 );
 
@@ -30,6 +34,10 @@ CREATE TABLE IF NOT EXISTS game_sessions (
   developed_zones INTEGER NOT NULL DEFAULT 0,
   disaster_resilience REAL NOT NULL DEFAULT 0,
   disasters_survived INTEGER NOT NULL DEFAULT 0,
+  casualties INTEGER NOT NULL DEFAULT 0,
+  injured INTEGER NOT NULL DEFAULT 0,
+  disaster_cost INTEGER NOT NULL DEFAULT 0,
+  zones_damaged INTEGER NOT NULL DEFAULT 0,
   duration_seconds INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

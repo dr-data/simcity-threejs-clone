@@ -226,6 +226,7 @@ export class DisasterAnimationManager {
 
   #applyDamage(zone, type, level, repairTicks) {
     if (!zone.development) return;
+    window.disasterManager?.recordBuildingDamage(zone, type, level);
     zone.development.damageType = type;
     zone.development.damageLevel = level;
     zone.development.repairTicksNeeded = repairTicks;

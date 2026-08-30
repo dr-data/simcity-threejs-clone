@@ -270,6 +270,7 @@ export class Game {
         return;
       }
       window.budgetManager.budget -= cost;
+      window.disasterManager?.consequences?.addEmergencySpend(cost);
       window.ui.updateTitleBar(this);
     }
 

@@ -90,7 +90,7 @@ h1 {
 
 #game-controls {
   position: absolute;
-  top: 64px;
+  top: 88px;
   left: 0;
   bottom: 0;
   width: 56px;
@@ -268,48 +268,140 @@ h1 {
   pointer-events: none;
 }
 
-/* TITLE BAR */
+/* TITLE BAR / HEADER */
+
+#game-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 95;
+  background: linear-gradient(180deg, rgba(8, 12, 24, 0.94) 0%, rgba(8, 12, 24, 0.88) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px 4px;
+  gap: 8px;
+}
+
+.app-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.app-title {
+  font-size: 1.15rem;
+  letter-spacing: 0.06em;
+  color: #81b1e0;
+  line-height: 1.1;
+}
+
+.city-name {
+  font-size: 1rem;
+  color: #f0f4ff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.header-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.header-icon-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(50, 60, 85, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 6px;
+}
+
+.header-action-icon {
+  width: 24px;
+  height: 24px;
+  pointer-events: none;
+}
 
 #title-bar {
-  position: fixed;
-
-  top: 0;
-  left: 0px;
-  right: 0;
-  height: 48px;
-
-  background-color: #00000048;
-  color: white;
-  padding: 8px;
-
-  box-shadow: 0px 0px 1px black;
-
   display: flex;
-  justify-content: space-evenly;
+  justify-content: space-between;
   align-items: center;
+  padding: 4px 12px 8px;
+  color: white;
 }
 
 .title-bar-items {
-  flex: 1 1 33%;
+  flex: 1 1 auto;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 1.65rem;
+  font-size: 1.35rem;
+  gap: 6px;
 }
 
-.title-bar-items.title-bar-center-items {
-  font-size: 2rem;
+.title-bar-left-items {
+  justify-content: flex-start;
+}
+
+.title-bar-right-items {
+  justify-content: flex-end;
+}
+
+.session-timer {
+  color: #ffcc00;
+  font-size: 1.1rem;
+  margin-right: 4px;
+}
+
+.mobile-stats {
+  display: none;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  padding: 0 12px 6px;
+  font-size: 0.8rem;
+  color: #b8c8e0;
+}
+
+.mobile-stats strong {
+  color: #f0f4ff;
+}
+
+.mini-stat-icon {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+}
+
+.desktop-only-inline {
+  display: block;
+}
+
+.mobile-only {
+  display: none;
 }
 
 #population-icon {
-  position: relative;
-  width: 32px;
-  height: 32px;
-  top: -3px;
+  width: 28px;
+  height: 28px;
 }
 
 #population-counter {
-  margin-left: 8px;
+  margin-left: 4px;
 }
 
 /* INFO PANEL */
@@ -317,7 +409,7 @@ h1 {
 #info-panel {
   visibility: hidden;
   position: fixed;
-  top: 64px;
+  top: 88px;
   right: 0px;
   padding: 0; 
   padding-bottom: 16px;
@@ -403,7 +495,7 @@ h1 {
 
 .banner-message {
   position: fixed;
-  top: 64px;
+  top: 96px;
   left: 50%;
   transform: translateX(-50%);
   background: rgba(20, 26, 42, 0.95);
@@ -428,7 +520,7 @@ h1 {
 
 #top-nav {
   position: fixed;
-  top: 52px;
+  top: 88px;
   right: 8px;
   display: flex;
   gap: 14px;
@@ -443,7 +535,7 @@ h1 {
 
 #stats-panel {
   position: fixed;
-  top: 76px;
+  top: 88px;
   right: 8px;
   width: 240px;
   z-index: 80;
@@ -842,10 +934,42 @@ a {
   color: #e8eef8;
   border: none;
   border-radius: 10px;
-  padding: 10px 6px;
+  padding: 6px 4px;
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 0.75rem;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.mobile-tab-icon {
+  width: 26px;
+  height: 26px;
+  pointer-events: none;
+}
+
+.build-chip {
+  background: #2a3348;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 10px 8px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.build-chip-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  pointer-events: none;
 }
 
 .mobile-tab.selected {
@@ -857,18 +981,6 @@ a {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-}
-
-.build-chip {
-  background: #2a3348;
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
-  padding: 12px 10px;
-  font-family: inherit;
-  font-size: 0.95rem;
-  cursor: pointer;
-  text-align: left;
 }
 
 .build-chip:active {
@@ -888,15 +1000,7 @@ a {
     overflow: hidden;
   }
 
-  #instructions, #version {
-    display: none;
-  }
-
-  #bottom-right-dock {
-    display: none !important;
-  }
-
-  .desktop-toolbar {
+  .desktop-only-inline {
     display: none !important;
   }
 
@@ -904,51 +1008,48 @@ a {
     display: block;
   }
 
+  .header-actions.mobile-only {
+    display: flex;
+  }
+
+  .mobile-stats.mobile-only {
+    display: flex;
+  }
+
+  #instructions, #version {
+    display: none;
+  }
+
+  #bottom-right-dock,
+  .desktop-toolbar,
+  #stats-panel,
+  #top-nav {
+    display: none !important;
+  }
+
   #mobile-tab-bar {
     display: grid;
   }
 
-  #top-nav {
-    display: none;
+  .app-title {
+    font-size: 1rem;
   }
 
-  #stats-panel {
-    top: 48px;
-    padding: 4px 8px;
-    font-size: 0.82rem;
-    gap: 2px 6px;
-  }
-
-  .stat-row.time-row {
-    font-weight: bold;
-  }
-
-  .mobile-view-controls {
-    display: flex;
-  }
-
-  .text-overlay {
-    font-size: 2.5em;
+  .city-name {
+    font-size: 0.9rem;
+    color: #c8d4e8;
   }
 
   #title-bar {
-    height: 48px;
-    padding: 4px 10px;
-    z-index: 92;
+    padding: 2px 12px 6px;
   }
 
   .title-bar-items {
-    font-size: 1.15rem;
+    font-size: 1.1rem;
   }
 
-  .title-bar-items.title-bar-center-items {
-    font-size: 1.2rem;
-    flex: 1 1 50%;
-  }
-
-  .title-date-sep,
-  #sim-time {
-    display: none;
+  .session-timer {
+    font-size: 1rem;
   }
 
   #population-icon {
@@ -956,62 +1057,16 @@ a {
     height: 22px;
   }
 
-  #population-counter {
-    margin-left: 4px;
-  }
-
-  /* Stats strip — full width under title bar */
-  #stats-panel {
-    top: 48px;
-    left: 0;
-    right: 0;
-    width: 100%;
-    max-width: none;
-    min-width: 0;
-    padding: 6px 10px;
+  .mobile-view-controls {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 4px 10px;
-    border-radius: 0;
-    font-size: 0.95rem;
-    z-index: 91;
-    box-sizing: border-box;
-  }
-
-  .stat-row {
-    margin: 0;
-    flex: 0 0 auto;
-    gap: 4px;
-  }
-
-  .stat-row.time-row span:last-child {
-    font-size: 1em;
-  }
-
-  /* Nav row — centered below stats */
-  #top-nav {
-    top: 78px;
-    left: 0;
-    right: 0;
-    justify-content: center;
-    gap: 12px;
-    font-size: 0.95rem;
-    flex-wrap: wrap;
-    padding: 4px 10px 6px;
-    z-index: 90;
-  }
-
-  #top-nav a {
-    padding: 2px 6px;
-  }
-
-  #settings-btn {
-    padding: 2px 8px;
   }
 
   .mobile-more-actions {
     display: flex;
+  }
+
+  .text-overlay {
+    font-size: 2.5em;
   }
 
   #info-panel {
@@ -1033,7 +1088,7 @@ a {
   }
 
   .banner-message {
-    top: 88px;
+    top: 76px;
     font-size: 0.95rem;
     max-width: 92vw;
     text-align: center;
@@ -1046,7 +1101,8 @@ a {
   }
 
   .slide-panel {
-    max-height: 50vh;
+    max-height: 55vh;
+    bottom: calc(56px + env(safe-area-inset-bottom));
   }
 
   .action-label {
@@ -1076,7 +1132,7 @@ a {
 @media (min-width: 901px) {
   #game-controls {
     position: absolute;
-    top: 64px;
+    top: 88px;
     left: 0;
     bottom: 0;
     width: 60px;
@@ -1084,6 +1140,23 @@ a {
     background: transparent;
     flex-direction: column;
     max-height: none;
+  }
+
+  .app-title {
+    font-size: 1.25rem;
+  }
+
+  .city-name {
+    font-size: 0.95rem;
+    color: #d0daf0;
+  }
+
+  .session-timer {
+    display: none;
+  }
+
+  #top-nav {
+    display: flex;
   }
 
   #bottom-right-dock {

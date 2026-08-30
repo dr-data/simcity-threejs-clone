@@ -3,7 +3,7 @@ import { BuildingType } from '../sim/buildings/buildingType.js';
 import { DevelopmentState } from '../sim/buildings/modules/development.js';
 import { isPowerPlant } from '../sim/buildings/power/powerPlantTypes.js';
 import { DISASTER_LEVELS } from './disasterConfig.js';
-import { DisasterAnimationManager } from './disasterAnimations.js';
+import { DisasterZoneVisuals } from './disasterZoneVisuals.js';
 
 const RCI = [BuildingType.residential, BuildingType.commercial, BuildingType.industrial];
 
@@ -23,10 +23,7 @@ export class DisasterAreaSim {
   typhoons = [];
   radiationZones = [];
 
-  /** @type {THREE.Group} */
-  overlayGroup = new THREE.Group();
-  /** @type {Map<string, THREE.Mesh>} */
-  #tileOverlays = new Map();
+  zoneVisuals = new DisasterZoneVisuals();
 
   constructor(game, animationManager) {
     this.game = game;
@@ -34,7 +31,7 @@ export class DisasterAreaSim {
   }
 
   attachToCity(city) {
-    city.debugMeshes.add(this.overlayGroup);
+    this.zoneVisuals.attachToCity(city);
   }
 
   update() {
@@ -43,7 +40,8 @@ export class DisasterAreaSim {
     this.#updateFires(now);
     this.#updateTyphoons(now);
     this.#updateRadiation(now);
-    this.#syncOverlays();
+    this.zoneVisuals.update(now, this);
+    this.zoneVisuals.syncFromCity(this.game.city, this);
   }
 
   dispatchFirefighters() {
@@ -206,6 +204,7 @@ export class DisasterAreaSim {
         const t = city.getTile(x + dx, y + dy);
         if (!t) continue;
         t.isRadioactive = true;
+        t.hazardType = 'nuclear';
         t.hazardIntensity = Math.max(t.hazardIntensity, 0.85);
         this.#damageTileBuilding(t, 'nuclear', level, true);
       }
@@ -387,8 +386,8 @@ export class DisasterAreaSim {
           } else if (RCI.includes(b.type) && b.development) {
             this.animations.animateDamage(b, 'typhoon', ty.level, DISASTER_LEVELS[ty.level]?.repairTicks ?? 6, () => {});
           }
-          this.#setTileHazard(x, y, 0.6, 'typhoon');
-          setTimeout(() => this.#clearTileHazard(x, y), 2000);
+          this.#setTileHazard(x, y, 0.75, 'typhoon');
+          setTimeout(() => this.#clearTileHazard(x, y), 4500);
         }
       }
       return ty.progress < 1.05;
@@ -414,83 +413,20 @@ export class DisasterAreaSim {
     });
   }
 
-  #syncOverlays() {
-    const city = this.game.city;
-    const activeKeys = new Set();
-
-    for (let x = 0; x < city.size; x++) {
-      for (let y = 0; y < city.size; y++) {
-        const tile = city.getTile(x, y);
-        if (!tile) continue;
-        const key = city.tileKey(x, y);
-        const intensity = tile.hazardIntensity;
-        if (intensity > 0.02 || tile.isRadioactive) {
-          activeKeys.add(key);
-          let color = 0x2288cc;
-          let opacity = intensity * 0.55;
-          if (tile.isRadioactive) {
-            color = 0x88ff44;
-            opacity = 0.5;
-          } else if (this.#tileHasFire(x, y)) {
-            color = 0xff5500;
-            opacity = Math.min(0.7, intensity * 0.8);
-          }
-          this.#setOverlay(key, x, y, color, opacity, tile.isRadioactive);
-        }
-      }
-    }
-
-    for (const key of this.#tileOverlays.keys()) {
-      if (!activeKeys.has(key)) {
-        const mesh = this.#tileOverlays.get(key);
-        this.overlayGroup.remove(mesh);
-        mesh.geometry.dispose();
-        mesh.material.dispose();
-        this.#tileOverlays.delete(key);
-      }
-    }
-  }
-
-  #tileHasFire(x, y) {
-    const key = this.game.city.tileKey(x, y);
-    for (const fire of this.fires) {
-      const c = fire.cells.get(key);
-      if (c && c.intensity > 0.1) return true;
-    }
-    return false;
-  }
-
-  #setOverlay(key, x, y, color, opacity, radioactive) {
-    let mesh = this.#tileOverlays.get(key);
-    if (!mesh) {
-      const geo = new THREE.PlaneGeometry(0.92, 0.92);
-      const mat = new THREE.MeshBasicMaterial({
-        color,
-        transparent: true,
-        opacity,
-        depthWrite: false,
-      });
-      mesh = new THREE.Mesh(geo, mat);
-      mesh.rotation.x = -Math.PI / 2;
-      mesh.position.set(x, 0.06, y);
-      if (radioactive) {
-        mesh.userData.pulse = true;
-      }
-      this.overlayGroup.add(mesh);
-      this.#tileOverlays.set(key, mesh);
-    }
-    mesh.material.color.setHex(color);
-    mesh.material.opacity = opacity;
-  }
-
-  #setTileHazard(x, y, intensity, _type) {
+  #setTileHazard(x, y, intensity, type) {
     const tile = this.game.city.getTile(x, y);
-    if (tile) tile.hazardIntensity = Math.max(tile.hazardIntensity, intensity);
+    if (tile) {
+      tile.hazardIntensity = Math.max(tile.hazardIntensity, intensity);
+      if (type) tile.hazardType = type;
+    }
   }
 
   #clearTileHazard(x, y) {
     const tile = this.game.city.getTile(x, y);
-    if (tile && !tile.isRadioactive) tile.hazardIntensity = 0;
+    if (tile && !tile.isRadioactive) {
+      tile.hazardIntensity = 0;
+      tile.hazardType = null;
+    }
   }
 
   #tryFloodDamage(x, y, level) {

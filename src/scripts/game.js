@@ -52,6 +52,7 @@ export class Game {
       this.city = new City(16);
       this.initialize(this.city);
       this._setupManagers();
+      window.disasterManager?.animations?.setScene(this.scene);
       this.start();
       setInterval(this.simulate.bind(this), 1000);
       this._initSession();

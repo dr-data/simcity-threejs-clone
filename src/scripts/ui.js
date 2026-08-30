@@ -104,11 +104,17 @@ export class GameUI {
     set('stat-zones', stats.developedZones);
     set('stat-power', `${stats.power.capacity}/${stats.power.demand} kW`);
     set('stat-resilience', `${stats.disasterResilience}%`);
+    set('stat-residents-mobile', stats.residents);
+    set('stat-zones-mobile', stats.developedZones);
+    set('stat-power-mobile', `${stats.power.capacity}/${stats.power.demand}`);
+    set('stat-resilience-mobile', `${stats.disasterResilience}%`);
   }
 
   updateTimeRemaining(time) {
     const el = document.getElementById('stat-time');
+    const headerTimer = document.getElementById('stat-time-header');
     if (el) el.textContent = time;
+    if (headerTimer) headerTimer.textContent = time;
   }
 
   updateInfoPanel(object) {

@@ -10,6 +10,8 @@ export class Tile extends SimObject {
   terrain = 'grass';
   /** Flood / radiation intensity on this tile (0–1) */
   hazardIntensity = 0;
+  /** Active hazard visual type: flood, fire, typhoon, nuclear */
+  hazardType = null;
   /** Radioactive contamination — blocks development */
   isRadioactive = false;
   /**

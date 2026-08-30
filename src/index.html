@@ -63,22 +63,43 @@
     </div>
 
     <div id="ui">
-      <div id="title-bar">
-        <div class="title-bar-left-items title-bar-items">
-          <span id="budget-counter">$5000</span>
+      <header id="game-header">
+        <div class="header-top">
+          <div class="app-brand">
+            <span class="app-title">Classroom SimCity</span>
+            <span id="city-name" class="city-name">My City</span>
+          </div>
+          <div class="header-actions mobile-only">
+            <button type="button" class="header-icon-btn" onclick="ui.openSettings()" title="Settings">
+              <img src="/icons/settings-color.svg" alt="" class="header-action-icon">
+            </button>
+            <button type="button" class="header-icon-btn" onclick="ui.toggleMorePanel()" title="Menu">
+              <img src="/icons/menu-color.svg" alt="" class="header-action-icon">
+            </button>
+          </div>
         </div>
-        <div class="title-bar-center-items title-bar-items">
-          <span id="city-name">My City</span>
-          <span class="title-date-sep">&nbsp;-&nbsp;</span>
-          <span id="sim-time">9/1/2026</span>
+        <div id="title-bar" class="header-stats">
+          <div class="title-bar-left-items title-bar-items">
+            <span id="budget-counter">$5000</span>
+          </div>
+          <div class="title-bar-center-items title-bar-items desktop-only-inline">
+            <span id="sim-time">9/1/2026</span>
+          </div>
+          <div class="title-bar-right-items title-bar-items">
+            <span id="stat-time-header" class="session-timer">15:00</span>
+            <img id="population-icon" src="/icons/person.png" alt="">
+            <span id="population-counter">0</span>
+          </div>
         </div>
-        <div class="title-bar-right-items title-bar-items">
-          <img id="population-icon" src="/icons/person.png" alt="">
-          <span id="population-counter">0</span>
+        <div id="mobile-stats-strip" class="mobile-only mobile-stats">
+          <span><img src="/icons/person.png" alt="" class="mini-stat-icon"> <span id="stat-residents-mobile">0</span></span>
+          <span>Zones <strong id="stat-zones-mobile">0</strong></span>
+          <span>Power <strong id="stat-power-mobile">0/0</strong></span>
+          <span>Safe <strong id="stat-resilience-mobile">100%</strong></span>
         </div>
-      </div>
+      </header>
 
-      <nav id="top-nav">
+      <nav id="top-nav" class="desktop-only-inline">
         <a href="/login.html" id="nav-login">Login</a>
         <span id="nav-user">Guest</span>
         <a href="/leaderboard.html">Board</a>
@@ -87,7 +108,7 @@
         <button type="button" id="settings-btn" class="nav-icon-btn" onclick="ui.openSettings()" title="Settings">⚙</button>
       </nav>
 
-      <div id="stats-panel" class="container">
+      <div id="stats-panel" class="container desktop-only-inline">
         <div class="stat-row"><span>Residents</span><span id="stat-residents">0</span></div>
         <div class="stat-row"><span>Zones</span><span id="stat-zones">0</span></div>
         <div class="stat-row"><span>Power</span><span id="stat-power">0/0 kW</span></div>
@@ -97,15 +118,19 @@
 
       <div id="mobile-tab-bar" class="mobile-only">
         <button type="button" class="mobile-tab selected" data-tool="select" onclick="ui.mobileSelectTool('select')">
+          <img src="/icons/select-color.png" alt="" class="mobile-tab-icon">
           <span>Select</span>
         </button>
         <button type="button" class="mobile-tab" data-tool="build" onclick="ui.toggleMobileBuildSheet()">
+          <img src="/icons/house-color.png" alt="" class="mobile-tab-icon">
           <span>Build</span>
         </button>
         <button type="button" class="mobile-tab" data-tool="road" onclick="ui.mobileSelectTool('road')">
+          <img src="/icons/road-color.png" alt="" class="mobile-tab-icon">
           <span>Road</span>
         </button>
         <button type="button" class="mobile-tab" data-tool="menu" onclick="ui.toggleMorePanel()">
+          <img src="/icons/menu-color.svg" alt="" class="mobile-tab-icon">
           <span>Menu</span>
         </button>
       </div>
@@ -116,14 +141,30 @@
           <button type="button" class="nav-icon-btn" onclick="ui.toggleMobileBuildSheet(false)">✕</button>
         </div>
         <div class="mobile-build-grid">
-          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('residential')">🏠 Residential</button>
-          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('commercial')">🏪 Commercial</button>
-          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('industrial')">🏭 Industrial</button>
-          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('power-plant-petroleum')">🛢 Petroleum</button>
-          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('power-plant-nuclear')">☢ Nuclear</button>
-          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('fire-station')">🚒 Fire Station</button>
-          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('power-line')">⚡ Power Line</button>
-          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('bulldoze')">🚧 Bulldoze</button>
+          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('residential')">
+            <img src="/icons/house-color.png" alt="" class="build-chip-icon"> Residential
+          </button>
+          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('commercial')">
+            <img src="/icons/store-color.png" alt="" class="build-chip-icon"> Commercial
+          </button>
+          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('industrial')">
+            <img src="/icons/factory-color.png" alt="" class="build-chip-icon"> Industrial
+          </button>
+          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('power-plant-petroleum')">
+            <img src="/icons/petroleum-color.svg" alt="" class="build-chip-icon"> Petroleum
+          </button>
+          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('power-plant-nuclear')">
+            <img src="/icons/nuclear-color.svg" alt="" class="build-chip-icon"> Nuclear
+          </button>
+          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('fire-station')">
+            <img src="/icons/fire-station-color.svg" alt="" class="build-chip-icon"> Fire Station
+          </button>
+          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('power-line')">
+            <img src="/icons/power-line-color.png" alt="" class="build-chip-icon"> Power Line
+          </button>
+          <button type="button" class="build-chip" onclick="ui.mobileSelectTool('bulldoze')">
+            <img src="/icons/bulldozer-color.png" alt="" class="build-chip-icon"> Bulldoze
+          </button>
         </div>
       </div>
 
@@ -148,13 +189,13 @@
             <img class="toolbar-icon" src="/icons/road-color.png" alt="Road">
           </button>
           <button id="button-power-petroleum" class="ui-button" data-type="power-plant-petroleum" onclick="ui.onToolSelected(event)" title="Petroleum plant (120 kW)">
-            <span class="god-icon">Oil</span>
+            <img class="toolbar-icon" src="/icons/petroleum-color.svg" alt="Petroleum">
           </button>
           <button id="button-power-nuclear" class="ui-button" data-type="power-plant-nuclear" onclick="ui.onToolSelected(event)" title="Nuclear plant (280 kW)">
-            <span class="god-icon">Nuc</span>
+            <img class="toolbar-icon" src="/icons/nuclear-color.svg" alt="Nuclear">
           </button>
           <button id="button-fire-station" class="ui-button" data-type="fire-station" onclick="ui.onToolSelected(event)" title="Fire station">
-            <span class="god-icon">Fire</span>
+            <img class="toolbar-icon" src="/icons/fire-station-color.svg" alt="Fire station">
           </button>
           <button id="button-power-line" class="ui-button" data-type="power-line" onclick="ui.onToolSelected(event)">
             <img class="toolbar-icon" src="/icons/power-line-color.png" alt="Power line">
@@ -163,10 +204,10 @@
             <img id="pause-button-icon" class="toolbar-icon" src="/icons/pause-color.png" alt="Pause">
           </button>
           <button id="button-god" class="ui-button toolbar-extra" onclick="ui.toggleGodMode()" title="GOD Mode">
-            <span class="god-icon">GOD</span>
+            <img class="toolbar-icon" src="/icons/god-color.svg" alt="GOD">
           </button>
           <button id="button-disaster" class="ui-button toolbar-extra" onclick="ui.onDisaster()" title="Trigger Disaster">
-            <span class="god-icon">⚡</span>
+            <img class="toolbar-icon" src="/icons/disaster-color.svg" alt="Disaster">
           </button>
         </div>
         <button type="button" id="btn-more" class="dock-more-btn" onclick="ui.toggleMorePanel()" aria-label="More actions">More ⋯</button>

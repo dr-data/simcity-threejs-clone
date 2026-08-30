@@ -13,8 +13,8 @@ const defaults = {
   allowGodMode: true,
   allowCheats: true,
   aiEnabled: true,
-  defaultTemplate: 'balanced',
-  quickStartTemplate: 'small-town',
+  defaultTemplate: 'disaster-lab',
+  quickStartTemplate: 'disaster-lab',
   showTutorial: true,
   milestones: [
     { id: 'residents-500', label: 'Reach 500 residents', check: (s) => s.residents >= 500 },

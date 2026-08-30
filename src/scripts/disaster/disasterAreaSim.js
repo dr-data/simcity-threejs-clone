@@ -148,32 +148,36 @@ export class DisasterAreaSim {
   startTyphoon(level = 'moderate') {
     const city = this.game.city;
     const size = city.size;
+    // Map border tiles are water — keep typhoon path on playable land (1..size-2).
+    const innerMin = 1;
+    const innerMax = size - 2;
+    const innerSpan = Math.max(1, innerMax - innerMin);
     const edge = Math.floor(Math.random() * 4);
     let x0, y0, x1, y1;
     switch (edge) {
       case 0:
-        x0 = Math.floor(Math.random() * size);
-        y0 = 0;
-        x1 = Math.floor(Math.random() * size);
-        y1 = size - 1;
+        x0 = innerMin + Math.floor(Math.random() * innerSpan);
+        y0 = innerMin;
+        x1 = innerMin + Math.floor(Math.random() * innerSpan);
+        y1 = innerMax;
         break;
       case 1:
-        x0 = size - 1;
-        y0 = Math.floor(Math.random() * size);
-        x1 = 0;
-        y1 = Math.floor(Math.random() * size);
+        x0 = innerMax;
+        y0 = innerMin + Math.floor(Math.random() * innerSpan);
+        x1 = innerMin;
+        y1 = innerMin + Math.floor(Math.random() * innerSpan);
         break;
       case 2:
-        x0 = 0;
-        y0 = Math.floor(Math.random() * size);
-        x1 = size - 1;
-        y1 = Math.floor(Math.random() * size);
+        x0 = innerMin;
+        y0 = innerMin + Math.floor(Math.random() * innerSpan);
+        x1 = innerMax;
+        y1 = innerMin + Math.floor(Math.random() * innerSpan);
         break;
       default:
-        x0 = Math.floor(Math.random() * size);
-        y0 = size - 1;
-        x1 = Math.floor(Math.random() * size);
-        y1 = 0;
+        x0 = innerMin + Math.floor(Math.random() * innerSpan);
+        y0 = innerMax;
+        x1 = innerMin + Math.floor(Math.random() * innerSpan);
+        y1 = innerMin;
         break;
     }
 

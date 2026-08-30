@@ -165,6 +165,11 @@ export default {
     "filename": "tile-plain_grass.glb",
     "castShadow": false
   },
+  "water": {
+    "type": "terrain",
+    "filename": "tile-plain_grass.glb",
+    "castShadow": false
+  },
   "car-taxi": {
     "type": "vehicle",
     "filename": "car-taxi.glb",

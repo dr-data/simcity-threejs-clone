@@ -77,7 +77,14 @@ export class DisasterManager {
   }
 
   triggerRandomDisaster() {
-    this.triggerDisaster(pickRandomType(), pickRandomLevel());
+    const city = this.game.city;
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const type = pickRandomType();
+      if (type === 'nuclear' && city.getNuclearPlants().length === 0) continue;
+      this.triggerDisaster(type, pickRandomLevel());
+      return;
+    }
+    this.triggerDisaster('fire', pickRandomLevel());
   }
 
   triggerDisaster(type, level = 'moderate') {
@@ -85,6 +92,11 @@ export class DisasterManager {
 
     const typeMeta = DISASTER_TYPES[type] || DISASTER_TYPES.fire;
     const levelMeta = DISASTER_LEVELS[level] || DISASTER_LEVELS.moderate;
+
+    if (type === 'nuclear' && this.game.city.getNuclearPlants().length === 0) {
+      window.ui?.showToast('Build a nuclear plant first (or use petroleum only).');
+      return;
+    }
 
     this._playEffects(type, level, 1, typeMeta, levelMeta);
 
@@ -108,10 +120,6 @@ export class DisasterManager {
         break;
       case 'nuclear':
         const plants = this.game.city.getNuclearPlants();
-        if (plants.length === 0) {
-          window.ui?.showToast('Build a nuclear plant first (or use petroleum only).');
-          return;
-        }
         const p = plants[Math.floor(Math.random() * plants.length)];
         ok = this.areaSim.startMeltdown(p.x, p.y, level);
         messageExtra = 'Radioactive zone — area uninhabitable!';

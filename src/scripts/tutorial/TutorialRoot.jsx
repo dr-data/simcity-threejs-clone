@@ -60,10 +60,10 @@ export function TutorialRoot({ run, onFinish }) {
           textColor: '#fff',
           arrowColor: '#1e2331',
         },
-        tooltip: { fontSize: 15, padding: 16 },
-        buttonNext: { fontSize: 14 },
-        buttonBack: { fontSize: 14 },
-        buttonSkip: { fontSize: 14 },
+        tooltip: { fontSize: 17, padding: 18 },
+        buttonNext: { fontSize: 16 },
+        buttonBack: { fontSize: 16 },
+        buttonSkip: { fontSize: 16 },
       }}
     />
   );

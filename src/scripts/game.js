@@ -6,7 +6,7 @@ import { City } from './sim/city.js';
 import { SimObject } from './sim/simObject.js';
 import gameConfig from './gameConfig.js';
 import { SessionManager } from './session/sessionManager.js';
-import { DISASTER_LEVELS } from './disaster/disasterConfig.js';
+import { DISASTER_LEVELS, DISASTER_TYPES } from './disaster/disasterConfig.js';
 import { DisasterManager } from './disaster/disasterManager.js';
 import { CheatConsole } from './cheat/cheatConsole.js';
 import { SaveLoadManager } from './save/saveLoadManager.js';
@@ -273,6 +273,8 @@ export class Game {
     } else {
       window.disasterManager?.triggerRandomDisaster();
     }
+    const meta = DISASTER_TYPES[type] || DISASTER_TYPES.fire;
+    window.ui?.showToast(`${meta.emoji} ${meta.label} disaster!`);
   }
 
   loadTemplate(templateId) {

@@ -26,7 +26,8 @@ export class DisasterAnimationManager {
   animateDamage(zone, type, level, repairTicks, onDamaged) {
     const mesh = zone.mesh;
     if (!mesh) {
-      onDamaged();
+      this.#applyDamage(zone, type, level, repairTicks);
+      onDamaged?.();
       return;
     }
 
@@ -91,13 +92,7 @@ export class DisasterAnimationManager {
           mesh.scale.copy(baseScale);
           this.#clearEmissive(mesh);
           this.#removeParticles(particles);
-          if (zone.development) {
-            zone.development.damageType = type;
-            zone.development.damageLevel = level;
-            zone.development.repairTicksNeeded = repairTicks;
-            zone.development.state = DevelopmentState.damaged;
-            zone.development.repairCounter = 0;
-          }
+          this.#applyDamage(zone, type, level, repairTicks);
           onDamaged?.();
           return false;
         }
@@ -106,6 +101,15 @@ export class DisasterAnimationManager {
     };
 
     this.active.push(anim);
+  }
+
+  #applyDamage(zone, type, level, repairTicks) {
+    if (!zone.development) return;
+    zone.development.damageType = type;
+    zone.development.damageLevel = level;
+    zone.development.repairTicksNeeded = repairTicks;
+    zone.development.state = DevelopmentState.damaged;
+    zone.development.repairCounter = 0;
   }
 
   update() {

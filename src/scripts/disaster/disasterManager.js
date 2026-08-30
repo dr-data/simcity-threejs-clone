@@ -1,4 +1,5 @@
 import { DevelopmentState } from '../sim/buildings/modules/development.js';
+import { BuildingType } from '../sim/buildings/buildingType.js';
 import {
   DISASTER_TYPES,
   DISASTER_LEVELS,
@@ -81,6 +82,9 @@ export class DisasterManager {
    * @param {string} level
    */
   triggerDisaster(type, level = 'moderate') {
+    // Ensure scene ref is current (city re-init clears children but keeps scene)
+    this.animations.setScene(this.game.scene);
+
     const typeMeta = DISASTER_TYPES[type] || DISASTER_TYPES.fire;
     const levelMeta = DISASTER_LEVELS[level] || DISASTER_LEVELS.moderate;
 
@@ -101,13 +105,17 @@ export class DisasterManager {
         }
       }
     }
-    if (zones.length === 0) return;
+    if (zones.length === 0) {
+      this._playEffects(type, level, 1, typeMeta, levelMeta);
+      this._showMessage(type, level, 0, typeMeta, levelMeta);
+      window.ui?.showToast('No zones to hit — place residential, commercial, or industrial zones first.');
+      return;
+    }
 
     const severity = Math.min(0.85, this.severity * (levelMeta.severityMult / 0.25));
     const hitCount = Math.max(1, Math.floor(zones.length * severity));
-    const shuffled = zones.sort(() => Math.random() - 0.5).slice(0, hitCount);
+    const shuffled = [...zones].sort(() => Math.random() - 0.5).slice(0, hitCount);
 
-    this._pendingDamage = hitCount;
     let completed = 0;
 
     const onOneDamaged = () => {
@@ -118,7 +126,10 @@ export class DisasterManager {
       }
     };
 
-    // Stagger animations slightly for visual impact
+    // Play screen effects immediately
+    this._playEffects(type, level, hitCount, typeMeta, levelMeta);
+    this._showMessage(type, level, hitCount, typeMeta, levelMeta);
+
     shuffled.forEach((tile, i) => {
       const zone = tile.building;
       const delay = i * 80;
@@ -132,9 +143,6 @@ export class DisasterManager {
         );
       }, delay);
     });
-
-    this._playEffects(type, level, hitCount, typeMeta, levelMeta);
-    this._showMessage(type, level, hitCount, typeMeta, levelMeta);
   }
 
   _finishDisaster(type, level, hitCount, typeMeta, levelMeta) {
@@ -165,7 +173,11 @@ export class DisasterManager {
   _showMessage(type, level, hitCount, typeMeta, levelMeta) {
     const el = document.getElementById('disaster-message');
     if (!el) return;
-    el.textContent = `${typeMeta.emoji} ${typeMeta.label} (${levelMeta.label})! ${hitCount} zones hit — buildings collapsing!`;
+    const hitText =
+      hitCount === 0
+        ? 'No zones in range — build zones to see destruction!'
+        : `${hitCount} zones hit — buildings collapsing!`;
+    el.textContent = `${typeMeta.emoji} ${typeMeta.label} (${levelMeta.label})! ${hitText}`;
     el.style.visibility = 'visible';
     setTimeout(() => {
       el.style.visibility = 'hidden';

@@ -84,13 +84,13 @@ export class DisasterManager {
     for (let attempt = 0; attempt < 6; attempt++) {
       const type = pickRandomType();
       if (type === 'nuclear' && city.getNuclearPlants().length === 0) continue;
-      this.triggerDisaster(type, pickRandomLevel());
+      this.triggerDisaster(type, pickRandomLevel(), 'random');
       return;
     }
-    this.triggerDisaster('fire', pickRandomLevel());
+    this.triggerDisaster('fire', pickRandomLevel(), 'random');
   }
 
-  triggerDisaster(type, level = 'moderate') {
+  triggerDisaster(type, level = 'moderate', source = 'manual') {
     this.areaSim.attachToCity(this.game.city);
 
     const typeMeta = DISASTER_TYPES[type] || DISASTER_TYPES.fire;
@@ -102,7 +102,7 @@ export class DisasterManager {
     }
 
     this._playEffects(type, level, 1, typeMeta, levelMeta);
-    this.consequences.recordDisasterTriggered();
+    this.consequences.startEvent({ type, level, source });
 
     let ok = false;
     let messageExtra = '';

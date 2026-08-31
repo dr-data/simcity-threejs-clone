@@ -110,6 +110,7 @@ export class SessionManager {
       disaster_cost: consequences.disaster_cost ?? 0,
       zones_damaged: consequences.zones_damaged ?? 0,
       disaster_index: consequences.disaster_index ?? 0,
+      disaster_log: consequences.disaster_log ?? [],
     };
     sessionStats.score = this.computeScore({
       ...sessionStats,
@@ -129,6 +130,7 @@ export class SessionManager {
         injured: sessionStats.injured,
         disaster_cost: sessionStats.disaster_cost,
         zones_damaged: sessionStats.zones_damaged,
+        disaster_log: sessionStats.disaster_log,
       });
     } catch {
       /* offline or not logged in — stats still shown locally */

@@ -700,6 +700,41 @@ h1 {
   font-size: 1.2em;
 }
 
+.disaster-log {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.disaster-log-title,
+.action-label + .disaster-log-list {
+  font-size: 0.78rem;
+  color: #c8daf0;
+  margin-bottom: 4px;
+}
+
+.disaster-log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 22vh;
+  overflow-y: auto;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: #d8e4f4;
+}
+
+.disaster-log-list li {
+  margin: 0 0 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.disaster-log-empty {
+  color: #9eb0c8;
+  font-style: italic;
+}
+
 .view-bar {
   display: flex;
   align-items: center;

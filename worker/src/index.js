@@ -22,28 +22,13 @@ import {
   generateTip,
   generateSessionReview,
 } from './ai.js';
-
-const CORS_HEADERS = {
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Access-Control-Allow-Credentials': 'true',
-};
+import { corsHeaders as buildCorsHeaders } from './cors.js';
 
 function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
     status,
     headers: { 'Content-Type': 'application/json', ...extraHeaders },
   });
-}
-
-function cors(request, env) {
-  const origin = request.headers.get('Origin');
-  const allowed = env.ALLOWED_ORIGIN || '*';
-  const headers = { ...CORS_HEADERS };
-  if (allowed === '*' || origin === allowed) {
-    headers['Access-Control-Allow-Origin'] = origin || allowed;
-  }
-  return headers;
 }
 
 async function getUserFromSession(request, env) {
@@ -106,7 +91,7 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
     const method = request.method;
-    const corsHeaders = cors(request, env);
+    const corsHeaders = buildCorsHeaders(request, env);
 
     if (method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: corsHeaders });
@@ -268,25 +253,74 @@ export default {
           const injured = Math.max(0, parseInt(body.injured, 10) || 0);
           const disasterCost = Math.max(0, parseInt(body.disaster_cost, 10) || 0);
           const zonesDamaged = Math.max(0, parseInt(body.zones_damaged, 10) || 0);
+          const disasterLog = Array.isArray(body.disaster_log) ? body.disaster_log.slice(0, 40) : [];
 
-          await env.DB.prepare(
-            `INSERT INTO game_sessions (user_id, score, residents, developed_zones, disaster_resilience, disasters_survived, casualties, injured, disaster_cost, zones_damaged, duration_seconds)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-          )
-            .bind(
-              user.id,
-              score,
-              residents,
-              developedZones,
-              disasterResilience,
-              disastersSurvived,
-              casualties,
-              injured,
-              disasterCost,
-              zonesDamaged,
-              durationSeconds
+          let sessionId = null;
+          try {
+            const insert = await env.DB.prepare(
+              `INSERT INTO game_sessions (user_id, score, residents, developed_zones, disaster_resilience, disasters_survived, casualties, injured, disaster_cost, zones_damaged, duration_seconds, disaster_log)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
             )
-            .run();
+              .bind(
+                user.id,
+                score,
+                residents,
+                developedZones,
+                disasterResilience,
+                disastersSurvived,
+                casualties,
+                injured,
+                disasterCost,
+                zonesDamaged,
+                durationSeconds,
+                JSON.stringify(disasterLog)
+              )
+              .run();
+            sessionId = insert.meta.last_row_id;
+          } catch {
+            const insert = await env.DB.prepare(
+              `INSERT INTO game_sessions (user_id, score, residents, developed_zones, disaster_resilience, disasters_survived, casualties, injured, disaster_cost, zones_damaged, duration_seconds)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            )
+              .bind(
+                user.id,
+                score,
+                residents,
+                developedZones,
+                disasterResilience,
+                disastersSurvived,
+                casualties,
+                injured,
+                disasterCost,
+                zonesDamaged,
+                durationSeconds
+              )
+              .run();
+            sessionId = insert.meta.last_row_id;
+          }
+          try {
+            for (const event of disasterLog) {
+              await env.DB.prepare(
+                `INSERT INTO disaster_events (session_id, user_id, source, type, level, casualties, injured, cost, zones_damaged, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+              )
+                .bind(
+                  sessionId,
+                  user.id,
+                  String(event.source || 'unknown').slice(0, 20),
+                  String(event.type || 'unknown').slice(0, 40),
+                  String(event.level || 'moderate').slice(0, 20),
+                  Math.max(0, parseInt(event.killed, 10) || 0),
+                  Math.max(0, parseInt(event.injured, 10) || 0),
+                  Math.max(0, parseInt(event.repairCost, 10) || 0),
+                  Math.max(0, parseInt(event.zonesDamaged, 10) || 0),
+                  event.at ? new Date(event.at).toISOString() : new Date().toISOString()
+                )
+                .run();
+            }
+          } catch (e) {
+            console.error('disaster_events insert', e);
+          }
 
           const stats = await env.DB.prepare('SELECT * FROM player_stats WHERE user_id = ?')
             .bind(user.id)
@@ -342,6 +376,22 @@ export default {
           ).all();
           response = json({ hidden: false, leaderboard: rows.results }, 200, corsHeaders);
         }
+      } else if (path === '/api/disaster-log' && method === 'GET') {
+        let events = [];
+        try {
+          const rows = await env.DB.prepare(
+            `SELECT de.id, de.source, de.type, de.level, de.casualties, de.injured, de.cost,
+                    de.zones_damaged, de.created_at, u.username
+             FROM disaster_events de
+             JOIN users u ON u.id = de.user_id
+             WHERE u.is_active = 1
+             ORDER BY de.id DESC LIMIT 50`
+          ).all();
+          events = rows.results || [];
+        } catch {
+          events = [];
+        }
+        response = json({ events }, 200, corsHeaders);
       } else if (path.startsWith('/api/admin/')) {
         const user = await getUserFromSession(request, env);
         const adminErr = requireAdmin(user);

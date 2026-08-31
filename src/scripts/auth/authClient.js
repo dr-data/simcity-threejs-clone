@@ -1,7 +1,9 @@
 /**
  * API client for auth, scores, and leaderboard.
  */
-const API_BASE = import.meta.env.VITE_API_URL || '';
+import { resolveApiBase } from './apiConfig.js';
+
+const API_BASE = resolveApiBase(import.meta.env.VITE_API_URL);
 
 async function request(path, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -66,6 +68,7 @@ export const authClient = {
     request(`/api/admin/sessions${userId ? `?user_id=${userId}` : ''}`),
   adminDeleteSession: (id) =>
     request(`/api/admin/sessions/${id}`, { method: 'DELETE' }),
+  disasterLog: () => request('/api/disaster-log'),
   aiTip: (stats) =>
     request('/api/ai/tip', { method: 'POST', body: JSON.stringify(stats) }),
   aiSessionReview: (stats) =>

@@ -53,8 +53,10 @@
           <div><span>Casualties</span><strong id="end-casualties">0</strong></div>
           <div><span>Injured</span><strong id="end-injured">0</strong></div>
           <div><span>Disaster cost</span><strong id="end-disaster-cost">$0</strong></div>
-          <div><span>Harm index</span><strong id="end-disaster-index">0</strong></div>
+          <div><span>Harm index <small>(0–100, higher = worse)</small></span><strong id="end-disaster-index">0</strong></div>
         </div>
+        <h3>Disaster log</h3>
+        <ul id="end-disaster-log" class="disaster-log-list reflection-list"></ul>
         <h3>Reflection</h3>
         <ul id="reflection-prompts" class="reflection-list"></ul>
         <p id="ai-mayor-report" class="ai-text"></p>
@@ -122,8 +124,14 @@
         <div class="stat-row"><span>Casualties</span><span id="stat-casualties">0</span></div>
         <div class="stat-row"><span>Injured</span><span id="stat-injured">0</span></div>
         <div class="stat-row"><span>Disaster cost</span><span id="stat-disaster-cost">$0</span></div>
-        <div class="stat-row"><span>Harm index</span><span id="stat-disaster-index">0</span></div>
+        <div class="stat-row" title="Harm index is 0–100. Higher is worse: deaths, injuries, damaged zones, and cost.">
+          <span>Harm index</span><span id="stat-disaster-index">0</span>
+        </div>
         <div class="stat-row time-row"><span>Time</span><span id="stat-time">15:00</span></div>
+        <div class="disaster-log">
+          <div class="disaster-log-title">Disaster log</div>
+          <ul class="disaster-log-list"></ul>
+        </div>
       </div>
 
       <div id="mobile-tab-bar" class="mobile-only">
@@ -272,6 +280,8 @@
             <button type="button" class="action-btn small" onclick="ui.onResetCity()">Reset</button>
             <button type="button" class="action-btn small" onclick="window.cheatConsole?.toggle()">Console</button>
           </div>
+          <label class="action-label">Disaster log</label>
+          <ul class="disaster-log-list"></ul>
         </div>
       </div>
 
@@ -302,6 +312,8 @@
           <li>Roads must touch zone edges for development.</li>
           <li>Spread zones to reduce disaster damage concentration.</li>
           <li>Trade-off: industrial growth vs. resilience and sustainability.</li>
+          <li>Harm index is 0–100 (higher is worse). It rises with people killed, injuries, damaged zones, destroyed roads, and disaster cost.</li>
+          <li>Disasters can strike at random during a session, or you can trigger one from the Disaster panel. Every event is listed in the disaster log.</li>
         </ul>
         <div id="ai-tip-box" class="ai-tip-box">
           <p id="ai-tip-text">Press for a personalized planning tip.</p>

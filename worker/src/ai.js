@@ -3,6 +3,8 @@
  * Uses small model + short prompts to keep neuron usage low.
  */
 
+import { fallbackTip } from './aiTips.js';
+
 const MODEL = '@cf/meta/llama-3.2-1b-instruct';
 const GUEST_DAILY_LIMIT = 3;
 const USER_DAILY_LIMIT = 12;
@@ -66,10 +68,16 @@ async function runModel(env, userPrompt, maxTokens = 100) {
 }
 
 export async function generateTip(env, stats) {
-  const prompt = `City stats: ${stats.residents} residents, ${stats.developed_zones} developed zones, ` +
-    `${stats.disaster_resilience}% disaster resilience, power ${stats.power_capacity}/${stats.power_demand} kW. ` +
-    `Give one practical tip about zoning, power, or disaster preparedness.`;
-  return runModel(env, prompt, 80);
+  try {
+    const prompt = `City stats: ${stats.residents} residents, ${stats.developed_zones} developed zones, ` +
+      `${stats.disaster_resilience}% disaster resilience, power ${stats.power_capacity}/${stats.power_demand} kW. ` +
+      `Give one practical tip about zoning, power, or disaster preparedness.`;
+    const text = await runModel(env, prompt, 80);
+    if (text && text.length > 16) return text;
+  } catch (error) {
+    console.error('AI tip model failed', error);
+  }
+  return fallbackTip(stats);
 }
 
 export async function generateSessionReview(env, stats) {

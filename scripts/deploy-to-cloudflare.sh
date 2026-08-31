@@ -14,13 +14,12 @@ fi
 export CLOUDFLARE_API_TOKEN
 
 echo "==> Deploying Worker API..."
-npx wrangler deploy
+DEPLOY_LOG="$(mktemp)"
+npx wrangler deploy | tee "$DEPLOY_LOG"
 
-WORKER_URL="https://classroom-simcity-api.$(npx wrangler whoami 2>/dev/null | grep -oP 'subdomain: \K.*' || echo 'YOUR_SUBDOMAIN').workers.dev"
-# Fallback: read from deploy output
-if [[ -f .wrangler-deploy-url ]]; then
-  WORKER_URL=$(cat .wrangler-deploy-url)
-fi
+WORKER_URL="$(grep -oE 'https://[a-z0-9._-]+\.workers\.dev' "$DEPLOY_LOG" | head -1 || true)"
+WORKER_URL="${WORKER_URL:-https://classroom-simcity-api.shorlol.workers.dev}"
+rm -f "$DEPLOY_LOG"
 
 echo "==> Building frontend (API: ${VITE_API_URL:-$WORKER_URL})..."
 export VITE_API_URL="${VITE_API_URL:-$WORKER_URL}"

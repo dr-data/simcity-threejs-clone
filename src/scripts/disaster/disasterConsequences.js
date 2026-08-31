@@ -31,6 +31,8 @@ export class DisasterConsequences {
   zonesDamaged = 0;
   roadsDestroyed = 0;
   disastersTriggered = 0;
+  events = [];
+  currentEvent = null;
 
   reset() {
     this.casualties = 0;
@@ -40,6 +42,8 @@ export class DisasterConsequences {
     this.zonesDamaged = 0;
     this.roadsDestroyed = 0;
     this.disastersTriggered = 0;
+    this.events = [];
+    this.currentEvent = null;
   }
 
   get totalCost() {
@@ -61,6 +65,28 @@ export class DisasterConsequences {
     this.disastersTriggered++;
   }
 
+  startEvent({ type, level, source = 'manual' }) {
+    this.currentEvent = {
+      id: `${Date.now()}-${this.events.length}`,
+      at: Date.now(),
+      type,
+      level,
+      source,
+      killed: 0,
+      injured: 0,
+      repairCost: 0,
+      zonesDamaged: 0,
+      roadsDestroyed: 0,
+    };
+    this.events.push(this.currentEvent);
+    this.recordDisasterTriggered();
+    return this.currentEvent;
+  }
+
+  getEvents() {
+    return this.events.map((event) => ({ ...event }));
+  }
+
   addEmergencySpend(amount) {
     this.emergencySpend += Math.max(0, amount);
   }
@@ -78,9 +104,11 @@ export class DisasterConsequences {
     const mult = LEVEL_MULT[level] || 1;
     const repair = Math.round((levelMeta.cost ?? 200) * mult);
     this.repairCost += repair;
+    if (this.currentEvent) this.currentEvent.repairCost += repair;
 
     if (building?.type === BuildingType.road) {
       this.roadsDestroyed++;
+      if (this.currentEvent) this.currentEvent.roadsDestroyed++;
       return { killed: 0, injured: 0, repairCost: repair };
     }
 
@@ -91,6 +119,7 @@ export class DisasterConsequences {
       )
     ) {
       this.zonesDamaged++;
+      if (this.currentEvent) this.currentEvent.zonesDamaged++;
     }
 
     let killed = 0;
@@ -106,6 +135,10 @@ export class DisasterConsequences {
       injured = result.injured;
       this.casualties += killed;
       this.injured += injured;
+      if (this.currentEvent) {
+        this.currentEvent.killed += killed;
+        this.currentEvent.injured += injured;
+      }
     }
 
     return { killed, injured, repairCost: repair };
@@ -122,6 +155,7 @@ export class DisasterConsequences {
       roads_destroyed: this.roadsDestroyed,
       disasters_triggered: this.disastersTriggered,
       disaster_index: this.disasterIndex,
+      disaster_log: this.getEvents(),
     };
   }
 

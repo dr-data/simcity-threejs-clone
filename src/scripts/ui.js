@@ -14,6 +14,8 @@ import {
   DISASTER_LEVEL_IDS,
 } from './disaster/disasterConfig.js';
 import { TOOL_TIPS, formatToolHint } from './toolTips.js';
+import { formatDisasterEvent } from './disaster/disasterLogFormat.js';
+import { fallbackTip } from './ai/localTip.js';
 
 const SIM_START_DATE = gameConfig.simStartDate || '2026-09-01';
 
@@ -215,6 +217,21 @@ export class GameUI {
     set('stat-casualties-mobile', snap.casualties);
     set('stat-injured-mobile', snap.injured);
     set('stat-disaster-cost-mobile', snap.disaster_cost);
+    this.renderDisasterLog();
+  }
+
+  renderDisasterLog() {
+    const events = window.disasterManager?.consequences?.getEvents?.() ?? [];
+    const html =
+      events.length === 0
+        ? '<li class="disaster-log-empty">None yet — random events can strike during the session.</li>'
+        : [...events]
+            .reverse()
+            .map((event) => `<li>${formatDisasterEvent(event)}</li>`)
+            .join('');
+    document.querySelectorAll('.disaster-log-list').forEach((el) => {
+      el.innerHTML = html;
+    });
   }
 
   updateTimeRemaining(time) {
@@ -385,6 +402,14 @@ export class GameUI {
     document.getElementById('end-injured').textContent = stats.injured ?? 0;
     document.getElementById('end-disaster-cost').textContent = `$${stats.disaster_cost ?? 0}`;
     document.getElementById('end-disaster-index').textContent = stats.disaster_index ?? 0;
+    const logEl = document.getElementById('end-disaster-log');
+    if (logEl) {
+      const events = window.disasterManager?.consequences?.getEvents?.() ?? [];
+      logEl.innerHTML =
+        events.length === 0
+          ? '<li>No disasters this session.</li>'
+          : events.map((event) => `<li>${formatDisasterEvent(event)}</li>`).join('');
+    }
     const prompts = gameConfig.reflectionPrompts;
     const promptEl = document.getElementById('reflection-prompts');
     if (promptEl) {
@@ -550,11 +575,24 @@ export class GameUI {
         power_capacity: stats.power.capacity,
         power_demand: stats.power.demand,
       });
-      if (tipEl) tipEl.textContent = data.tip || 'No tip available.';
+      if (tipEl) tipEl.textContent = data.tip || fallbackTip({
+        residents: stats.residents,
+        developed_zones: stats.developedZones,
+        disaster_resilience: stats.disasterResilience,
+        power_capacity: stats.power.capacity,
+        power_demand: stats.power.demand,
+      });
       this.showToast(`AI tip (${data.remaining ?? '?'} left today)`);
     } catch (err) {
-      if (tipEl) tipEl.textContent = 'Could not load tip. Try again later.';
-      this.showToast(err.message);
+      const tip = fallbackTip({
+        residents: stats.residents,
+        developed_zones: stats.developedZones,
+        disaster_resilience: stats.disasterResilience,
+        power_capacity: stats.power.capacity,
+        power_demand: stats.power.demand,
+      });
+      if (tipEl) tipEl.textContent = tip;
+      this.showToast(err.message || 'Using a local planning tip');
     }
   }
 

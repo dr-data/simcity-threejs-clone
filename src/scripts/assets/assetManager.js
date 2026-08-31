@@ -1,9 +1,8 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import viteConfig from '../../../vite.config.js';
 import models from './models.js';
 
-const baseUrl = viteConfig.base;
+const baseUrl = import.meta.env.BASE_URL || '/';
 
 export class AssetManager {
   textureLoader = new THREE.TextureLoader();

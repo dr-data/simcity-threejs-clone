@@ -603,3 +603,4 @@ window.ui.populateTemplates();
 window.ui.populateDisasterOptions();
 window.ui.initTooltips();
 initTutorial();
+window.ui.maybeShowTutorialWelcome();

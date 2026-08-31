@@ -12,7 +12,7 @@ import { CheatConsole } from './cheat/cheatConsole.js';
 import { SaveLoadManager } from './save/saveLoadManager.js';
 import { BudgetManager } from './budget/budgetManager.js';
 import { applyTemplate } from './templates/cityTemplates.js';
-import { applyGeneratedLayout } from './templates/generateCity.js';
+import { applyGeneratedLayout } from './templates/applyCityLayout.js';
 import { authClient } from './auth/authClient.js';
 import { simIntervalMs } from './sim/simSpeed.js';
 

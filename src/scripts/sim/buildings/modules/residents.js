@@ -62,6 +62,13 @@ export class ResidentsModule extends SimModule {
     }
   }
 
+  seedOccupants() {
+    if (this.#zone.development.state !== DevelopmentState.developed) return;
+    while (this.#residents.length < this.maximum) {
+      this.#residents.push(new Citizen(this.#zone));
+    }
+  }
+
   /**
    * Evicts all residents from the building
    */

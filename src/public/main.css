@@ -1036,6 +1036,32 @@ h1 {
   margin: 16px 0;
 }
 
+.score-breakdown {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  background: rgba(10, 16, 28, 0.45);
+  border-radius: 8px;
+}
+
+.score-breakdown div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.score-breakdown small {
+  color: #9aa8c0;
+  font-size: 0.75rem;
+}
+
+.score-breakdown p {
+  grid-column: 1 / -1;
+  margin: 6px 0 0;
+}
+
 .end-stats div {
   background: #00000040;
   padding: 12px;

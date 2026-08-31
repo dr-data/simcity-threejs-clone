@@ -1,6 +1,6 @@
 import gameConfig from '../gameConfig.js';
 import { authClient } from '../auth/authClient.js';
-import { computeDrillScore } from './drillScore.js';
+import { computeDrillScore, scoreDrill } from './drillScore.js';
 
 /**
  * Manages timed classroom sessions: scoring, milestones, and end screen.
@@ -54,19 +54,23 @@ export class SessionManager {
     const consequences = window.disasterManager?.consequences?.getSnapshot() ?? {};
     const currentBuildings = stats.buildings ?? city.countBuildings();
     const startingBuildings = this.startingBuildings || currentBuildings;
+    const input = this.scoringInput(stats, consequences);
+    const breakdown = scoreDrill(input);
     const sessionStats = {
       residents: stats.residents,
       developedZones: stats.developedZones,
       disasterResilience: stats.disasterResilience ?? 100,
       disastersSurvived: this.disastersSurvived,
-      casualties: consequences.casualties ?? 0,
-      injured: consequences.injured ?? 0,
-      disaster_cost: consequences.disaster_cost ?? 0,
+      casualties: input.casualties,
+      injured: input.injured,
+      disaster_cost: input.disasterCost,
       startingBuildings,
       buildingsRemaining: currentBuildings,
-      buildingsDestroyed: Math.max(0, startingBuildings - currentBuildings),
+      buildingsDestroyed: input.buildingsDestroyed,
+      disasterCount: input.disasterCount,
     };
-    sessionStats.score = this.computeScore(sessionStats);
+    sessionStats.score = breakdown.score;
+    sessionStats.scoreBreakdown = breakdown;
     return sessionStats;
   }
 
@@ -103,21 +107,38 @@ export class SessionManager {
   tick() {
     if (!this.isActive) return;
     if (this.getTimeRemainingMs() <= 0) {
-      this.endSession();
+      this.endSession(window.game?.city?.getSessionStats() ?? {});
       return;
     }
     if (this.onTick) this.onTick(this.getTimeRemainingFormatted());
   }
 
+  scoringInput(stats, consequences) {
+    const city = window.game?.city;
+    const currentBuildings = stats?.buildings ?? city?.countBuildings?.() ?? 0;
+    const startingBuildings = this.startingBuildings || currentBuildings;
+    const events = consequences.disaster_log || [];
+    const elapsed = this.startTime ? Math.round((Date.now() - this.startTime) / 1000) : 0;
+    return {
+      buildingsDestroyed: Math.max(0, startingBuildings - currentBuildings),
+      buildingsRemaining: currentBuildings,
+      startingBuildings,
+      casualties: consequences.casualties ?? stats?.casualties ?? 0,
+      injured: consequences.injured ?? stats?.injured ?? 0,
+      disasterIndex: consequences.disaster_index ?? 0,
+      disasterCost: consequences.disaster_cost ?? 0,
+      zonesDamaged: consequences.zones_damaged ?? 0,
+      roadsDestroyed: consequences.roads_destroyed ?? 0,
+      durationSeconds: stats?.durationSeconds ?? elapsed,
+      durationAllowedSeconds: Math.round(this.durationMs / 1000),
+      disasterCount: consequences.disasters_triggered ?? events.length,
+      disasterTypes: events.map((e) => e.type),
+    };
+  }
+
   computeScore(stats) {
-    return computeDrillScore({
-      buildingsDestroyed: stats.buildingsDestroyed ?? 0,
-      buildingsRemaining: stats.buildingsRemaining ?? 0,
-      startingBuildings: stats.startingBuildings ?? this.startingBuildings,
-      disastersSurvived: this.disastersSurvived,
-      casualties: stats.casualties ?? 0,
-      injured: stats.injured ?? 0,
-    });
+    const consequences = window.disasterManager?.consequences?.getSnapshot() ?? {};
+    return computeDrillScore(this.scoringInput(stats, consequences));
   }
 
   checkMilestones(stats) {
@@ -153,29 +174,30 @@ export class SessionManager {
 
     const disasterResilience = stats.disasterResilience ?? 100;
     const consequences = window.disasterManager?.consequences?.getSnapshot() ?? {};
-    const currentBuildings = window.game?.city?.countBuildings?.() ?? stats.developedZones;
-    const startingBuildings = this.startingBuildings || currentBuildings;
-    const buildingsDestroyed = Math.max(0, startingBuildings - currentBuildings);
+    const input = this.scoringInput(
+      { ...stats, durationSeconds: Math.round((Date.now() - this.startTime) / 1000) },
+      consequences
+    );
+    const breakdown = scoreDrill(input);
     const sessionStats = {
       residents: stats.residents,
       developedZones: stats.developedZones,
       disasterResilience,
       disastersSurvived: this.disastersSurvived,
-      durationSeconds: Math.round((Date.now() - this.startTime) / 1000),
-      casualties: consequences.casualties ?? 0,
-      injured: consequences.injured ?? 0,
-      disaster_cost: consequences.disaster_cost ?? 0,
-      zones_damaged: consequences.zones_damaged ?? 0,
-      disaster_index: consequences.disaster_index ?? 0,
+      durationSeconds: input.durationSeconds,
+      casualties: input.casualties,
+      injured: input.injured,
+      disaster_cost: input.disasterCost,
+      zones_damaged: input.zonesDamaged,
+      disaster_index: input.disasterIndex,
       disaster_log: consequences.disaster_log ?? [],
-      startingBuildings,
-      buildingsRemaining: currentBuildings,
-      buildingsDestroyed,
+      startingBuildings: input.startingBuildings,
+      buildingsRemaining: input.buildingsRemaining,
+      buildingsDestroyed: input.buildingsDestroyed,
+      disasterCount: input.disasterCount,
+      score: breakdown.score,
+      scoreBreakdown: breakdown,
     };
-    sessionStats.score = this.computeScore({
-      ...sessionStats,
-      disasterResilience,
-    });
     this.lastStats = sessionStats;
 
     if (window.saveLoadManager?.scoreEligible !== false) {

@@ -44,7 +44,7 @@
     <div id="session-setup" class="modal-overlay" style="display: none;">
       <div class="modal-panel setup-panel">
         <h2>Start your drill</h2>
-        <p class="settings-hint">Name yourself and your city. Bigger maps spawn more buildings. You have until the clock runs out to knock them down with disasters.</p>
+        <p class="settings-hint">Name yourself and your city. Each size is a finished town on a street grid. Bigger maps have more developed buildings to flatten with disasters before the clock runs out.</p>
         <form id="session-setup-form" class="auth-form" onsubmit="ui.submitSessionSetup(event); return false;">
           <label>Your name
             <input type="text" id="setup-mayor" required maxlength="32" autocomplete="nickname" placeholder="Alex">
@@ -81,6 +81,7 @@
           <div><span>Harm index <small>(0–100, higher = worse)</small></span><strong id="end-disaster-index">0</strong></div>
           <div><span>Buildings destroyed</span><strong id="end-destroyed">0 / 0</strong></div>
         </div>
+        <div id="end-score-breakdown" class="score-breakdown"></div>
         <h3>Disaster log</h3>
         <ul id="end-disaster-log" class="disaster-log-list reflection-list"></ul>
         <h3>Reflection</h3>
@@ -152,6 +153,7 @@
         <div class="stat-row" title="Buildings still standing versus how many the drill started with.">
           <span>Buildings left</span><span id="stat-buildings">0/0</span>
         </div>
+        <div class="stat-row"><span>Score</span><span id="stat-score">0</span></div>
         <div class="stat-row"><span>Casualties</span><span id="stat-casualties">0</span></div>
         <div class="stat-row"><span>Injured</span><span id="stat-injured">0</span></div>
         <div class="stat-row"><span>Disaster cost</span><span id="stat-disaster-cost">$0</span></div>

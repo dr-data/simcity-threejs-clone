@@ -222,6 +222,8 @@ export class GameUI {
     const left = stats.buildings ?? 0;
     set('stat-buildings', `${left}/${start}`);
     set('stat-buildings-mobile', `${left}/${start}`);
+    const live = window.sessionManager?.collectLiveStats?.();
+    if (live) set('stat-score', live.score);
     set('stat-residents-mobile', stats.residents);
     set('stat-zones-mobile', stats.developedZones);
     set('stat-power-mobile', `${stats.power.capacity}/${stats.power.demand}`);
@@ -546,6 +548,21 @@ export class GameUI {
     const gone = document.getElementById('end-destroyed');
     if (gone) {
       gone.textContent = `${stats.buildingsDestroyed ?? 0} / ${stats.startingBuildings ?? 0}`;
+    }
+    const breakdownEl = document.getElementById('end-score-breakdown');
+    if (breakdownEl) {
+      const b = stats.scoreBreakdown;
+      if (b) {
+        breakdownEl.innerHTML = `
+          <div><span>Impact</span><strong>${b.impact}</strong><small>harm, people, cost, buildings</small></div>
+          <div><span>Tempo</span><strong>+${b.tempo}</strong><small>leftover time × coverage</small></div>
+          <div><span>Rhythm</span><strong>×${(b.rhythmMul || 0).toFixed(2)}</strong><small>${b.strikes} strikes (sweet spot ${b.expectedStrikes})</small></div>
+          <div><span>Mix</span><strong>+${b.mix}</strong><small>extra disaster types</small></div>
+          <p class="settings-hint">Impact × rhythm, then tempo and mix. Hitting the city fast with a handful of different disasters scores higher than spam or sitting out the clock.</p>
+        `;
+      } else {
+        breakdownEl.innerHTML = '';
+      }
     }
     const logEl = document.getElementById('end-disaster-log');
     if (logEl) {

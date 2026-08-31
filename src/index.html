@@ -221,6 +221,11 @@
           <button id="button-pause" class="ui-button" onclick="ui.togglePause()">
             <img id="pause-button-icon" class="toolbar-icon" src="/icons/pause-color.png" alt="Pause">
           </button>
+          <div class="sim-speed-bar" role="group" aria-label="Simulation speed">
+            <button type="button" class="speed-btn selected" data-sim-speed="1" onclick="ui.setSimSpeed(1)">1×</button>
+            <button type="button" class="speed-btn" data-sim-speed="2" onclick="ui.setSimSpeed(2)">2×</button>
+            <button type="button" class="speed-btn" data-sim-speed="5" onclick="ui.setSimSpeed(5)">5×</button>
+          </div>
           <button id="button-god" class="ui-button toolbar-extra" onclick="ui.toggleGodMode()" title="GOD Mode">
             <img class="toolbar-icon" src="/icons/god-color.svg" alt="GOD">
           </button>
@@ -274,9 +279,15 @@
             <button type="button" class="action-btn small" onclick="ui.onDisaster()">Trigger Disaster</button>
             <button type="button" class="action-btn small" onclick="ui.togglePause()">Pause</button>
           </div>
+          <label class="action-label">Speed</label>
           <div class="action-btn-row">
-            <button type="button" class="action-btn small" onclick="ui.onSaveCity()">Save</button>
-            <button type="button" class="action-btn small" onclick="ui.onLoadCity()">Load</button>
+            <button type="button" class="speed-btn selected" data-sim-speed="1" onclick="ui.setSimSpeed(1)">1×</button>
+            <button type="button" class="speed-btn" data-sim-speed="2" onclick="ui.setSimSpeed(2)">2×</button>
+            <button type="button" class="speed-btn" data-sim-speed="5" onclick="ui.setSimSpeed(5)">5×</button>
+          </div>
+          <div class="action-btn-row">
+            <button type="button" class="action-btn small" onclick="ui.onExportCity()">Export</button>
+            <button type="button" class="action-btn small" onclick="ui.onImportCity()">Import</button>
             <button type="button" class="action-btn small" onclick="ui.onResetCity()">Reset</button>
             <button type="button" class="action-btn small" onclick="window.cheatConsole?.toggle()">Console</button>
           </div>
@@ -295,8 +306,10 @@
         Zoom — Scroll
       </div>
 
-      <div id="version">Classroom SimCity v1.1</div>
+      <div id="version">Classroom SimCity v1.2</div>
     </div>
+
+    <input type="file" id="city-import-file" accept="application/json,.json" hidden onchange="ui.onCityFilePicked(event)">
 
     <div id="cheat-console">
       <div id="cheat-output">Type help for commands</div>
@@ -334,11 +347,19 @@
         <div class="settings-section">
           <h3>City</h3>
           <select id="settings-template-select" class="settings-select" onchange="ui.onSettingsTemplateChange(event)"></select>
+          <p class="settings-hint">Cities download as a .json file. A short code like X12345 cannot hold a 16×16 map, and it would be guessable. A restore slip (s123456-K7M2) is a random token stored on the server for your HSU ID only. There is no autosave. Importing someone else’s file is practice only and will not update the leaderboard. The class timer always keeps wall-clock time.</p>
           <div class="action-btn-row">
-            <button type="button" class="action-btn small" onclick="ui.onSaveCity()">Save</button>
-            <button type="button" class="action-btn small" onclick="ui.onLoadCity()">Load</button>
+            <button type="button" class="action-btn small" onclick="ui.onExportCity()">Export city file</button>
+            <button type="button" class="action-btn small" onclick="ui.onImportCity()">Import file</button>
             <button type="button" class="action-btn small" onclick="ui.onResetCity()">Reset</button>
           </div>
+          <div class="action-btn-row">
+            <button type="button" class="action-btn small" onclick="ui.onIssueRestoreCode()">Issue restore slip</button>
+          </div>
+          <label>Redeem restore slip
+            <input type="text" id="restore-code-input" class="settings-select" placeholder="s123456-K7M2" autocomplete="off">
+          </label>
+          <button type="button" class="action-btn small" onclick="ui.onRedeemRestoreCode()">Redeem my slip</button>
         </div>
         <div class="settings-actions">
           <button type="button" class="action-btn" onclick="ui.replayGuidedTour()">Replay Guided Tour</button>

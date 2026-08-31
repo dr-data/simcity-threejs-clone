@@ -13,11 +13,20 @@
 
     <div id="admin-content" style="display:none">
       <div class="admin-toolbar">
-        <input type="search" id="user-search" placeholder="Search username or email...">
+        <input type="search" id="user-search" placeholder="Search HSU ID...">
         <button class="action-btn small" onclick="adminApp.searchUsers()">Search</button>
         <button class="action-btn small secondary" onclick="adminApp.toggleLeaderboard()">Toggle Leaderboard</button>
         <button class="action-btn small danger" onclick="adminApp.resetLeaderboard()">Reset All Rankings</button>
       </div>
+
+      <h2>Class board code</h2>
+      <p class="settings-hint">Students need this code the first time they claim an HSU ID. Change it after class if unused IDs were grabbed.</p>
+      <form id="board-code-form" class="auth-form" onsubmit="return false">
+        <label>Board code
+          <input type="text" id="class-board-code" minlength="4" required>
+        </label>
+        <button type="button" class="action-btn" onclick="adminApp.saveClassCode()">Update board code</button>
+      </form>
 
       <h2>Players</h2>
       <div class="table-wrap">
@@ -25,8 +34,8 @@
           <thead>
             <tr>
               <th>ID</th>
-              <th>Username</th>
-              <th>Email</th>
+              <th>HSU ID</th>
+              <th>Last login</th>
               <th>Score</th>
               <th>Residents</th>
               <th>Zones</th>
@@ -53,6 +62,7 @@
         <button type="button" class="action-btn danger" onclick="adminApp.deleteUser(false)">Delete Account</button>
         <button type="button" class="action-btn secondary" onclick="adminApp.deleteUser(true)">Soft Delete</button>
         <button type="button" class="action-btn secondary" onclick="adminApp.resetUserStats()">Reset Stats</button>
+        <button type="button" class="action-btn secondary" onclick="adminApp.resetUserLock()">Reset personal lock</button>
       </form>
 
       <h2>Recent Sessions</h2>

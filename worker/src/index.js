@@ -1,8 +1,8 @@
 /**
  * Classroom SimCity API — Cloudflare Worker + D1
  *
- * Auth choice: email/username + password with D1 (SQLite).
- * D1 fits users, stats, sessions, and audit logs without extra services.
+ * Auth: HSU ID (s123456) + personal lock. Teachers log in as admin.
+ * Claim requires the class board code. D1 holds users, scores, restore slips.
  */
 
 import {
@@ -23,12 +23,35 @@ import {
   generateSessionReview,
 } from './ai.js';
 import { corsHeaders as buildCorsHeaders } from './cors.js';
+import { isHsuId, isLoginId, normalizeHsuId, parseRestoreCode, randomRestoreToken } from './hsu.js';
 
 function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
     status,
     headers: { 'Content-Type': 'application/json', ...extraHeaders },
   });
+}
+
+async function getSetting(env, key, fallback = '') {
+  const row = await env.DB.prepare('SELECT value FROM app_settings WHERE key = ?').bind(key).first();
+  return row?.value ?? fallback;
+}
+
+async function setSetting(env, key, value) {
+  await env.DB.prepare(
+    `INSERT INTO app_settings (key, value) VALUES (?, ?)
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value`
+  )
+    .bind(key, value)
+    .run();
+}
+
+function userPayload(user) {
+  return {
+    id: user.id,
+    username: user.username,
+    is_admin: user.is_admin,
+  };
 }
 
 async function getUserFromSession(request, env) {
@@ -101,71 +124,109 @@ export default {
       let response;
 
       // --- Auth ---
-      if (path === '/api/auth/signup' && method === 'POST') {
-        if (!checkRateLimit(request, 'signup', 10)) {
+      if ((path === '/api/auth/claim' || path === '/api/auth/signup') && method === 'POST') {
+        if (!checkRateLimit(request, 'claim', 8)) {
           response = json({ error: 'Too many requests' }, 429);
         } else {
           const body = await request.json();
-          const username = (body.username || '').trim();
-          const email = (body.email || '').trim() || null;
-          const password = body.password || '';
-          if (!username || username.length < 3 || password.length < 6) {
-            response = json({ error: 'Username (3+) and password (6+) required' }, 400);
+          const username = normalizeHsuId(body.username || body.hsuId);
+          const password = body.password || body.lock || '';
+          const boardCode = String(body.boardCode || body.classCode || '').trim();
+          if (!isHsuId(username)) {
+            response = json(
+              { error: 'Use your HSU ID (s followed by 6–8 digits), e.g. s123456' },
+              400
+            );
+          } else if (password.length < 6) {
+            response = json(
+              { error: 'Choose a personal lock of at least 6 characters. Do not share it.' },
+              400
+            );
           } else {
-            const existing = await env.DB.prepare('SELECT id FROM users WHERE username = ?')
-              .bind(username)
-              .first();
-            if (existing) {
-              response = json({ error: 'Username already taken' }, 409);
-            } else {
-              const salt = generateSalt();
-              const passwordHash = await hashPassword(password, salt);
-              const result = await env.DB.prepare(
-                `INSERT INTO users (username, email, password_hash, password_salt) VALUES (?, ?, ?, ?)`
-              )
-                .bind(username, email, passwordHash, salt)
-                .run();
-              const userId = result.meta.last_row_id;
-              await env.DB.prepare('INSERT INTO player_stats (user_id) VALUES (?)')
-                .bind(userId)
-                .run();
-              const sessionToken = await createSessionToken(userId, env.SESSION_SECRET);
+            const expected = await getSetting(env, 'class_board_code', 'HSU2026');
+            if (!boardCode || boardCode !== expected) {
               response = json(
-                { user: { id: userId, username, email, is_admin: 0 } },
-                201,
-                { 'Set-Cookie': sessionCookieHeader(sessionToken), ...corsHeaders }
+                { error: 'Board code is wrong or missing. Ask the teacher for today’s code.' },
+                403
               );
+            } else {
+              const existing = await env.DB.prepare('SELECT id FROM users WHERE username = ?')
+                .bind(username)
+                .first();
+              if (existing) {
+                response = json(
+                  {
+                    error:
+                      'This HSU ID is already claimed. Log in with your personal lock, or ask the teacher to reset it.',
+                  },
+                  409
+                );
+              } else {
+                const salt = generateSalt();
+                const passwordHash = await hashPassword(password, salt);
+                const result = await env.DB.prepare(
+                  `INSERT INTO users (username, email, password_hash, password_salt) VALUES (?, ?, ?, ?)`
+                )
+                  .bind(username, null, passwordHash, salt)
+                  .run();
+                const userId = result.meta.last_row_id;
+                await env.DB.prepare('INSERT INTO player_stats (user_id) VALUES (?)')
+                  .bind(userId)
+                  .run();
+                const sessionToken = await createSessionToken(userId, env.SESSION_SECRET);
+                response = json(
+                  { user: { id: userId, username, is_admin: 0 } },
+                  201,
+                  { 'Set-Cookie': sessionCookieHeader(sessionToken), ...corsHeaders }
+                );
+              }
             }
           }
         }
       } else if (path === '/api/auth/login' && method === 'POST') {
-        if (!checkRateLimit(request, 'login', 20)) {
+        if (!checkRateLimit(request, 'login', 12)) {
           response = json({ error: 'Too many requests' }, 429);
         } else {
           const body = await request.json();
-          const username = (body.username || '').trim();
-          const password = body.password || '';
-          const user = await env.DB.prepare(
-            'SELECT * FROM users WHERE username = ? AND is_active = 1'
-          )
-            .bind(username)
-            .first();
-          if (!user || !(await verifyPassword(password, user.password_salt, user.password_hash))) {
-            response = json({ error: 'Invalid credentials' }, 401);
-          } else {
-            const sessionToken = await createSessionToken(user.id, env.SESSION_SECRET);
+          const username = normalizeHsuId(body.username || body.hsuId);
+          const password = body.password || body.lock || '';
+          if (!isLoginId(username)) {
             response = json(
-              {
-                user: {
-                  id: user.id,
-                  username: user.username,
-                  email: user.email,
-                  is_admin: user.is_admin,
-                },
-              },
-              200,
-              { 'Set-Cookie': sessionCookieHeader(sessionToken), ...corsHeaders }
+              { error: 'Use your HSU ID (s123456) or ask the teacher for the admin login.' },
+              400
             );
+          } else {
+            const user = await env.DB.prepare(
+              'SELECT * FROM users WHERE username = ? AND is_active = 1'
+            )
+              .bind(username)
+              .first();
+            if (!user || !(await verifyPassword(password, user.password_salt, user.password_hash))) {
+              response = json(
+                { error: 'Wrong HSU ID or personal lock. IDs cannot be borrowed.' },
+                401
+              );
+            } else {
+              try {
+                await env.DB.prepare(
+                  'UPDATE users SET last_login_at = ?, last_login_ip = ? WHERE id = ?'
+                )
+                  .bind(
+                    new Date().toISOString(),
+                    request.headers.get('CF-Connecting-IP') || null,
+                    user.id
+                  )
+                  .run();
+              } catch {
+                /* columns may not exist until migration */
+              }
+              const sessionToken = await createSessionToken(user.id, env.SESSION_SECRET);
+              response = json(
+                { user: userPayload(user) },
+                200,
+                { 'Set-Cookie': sessionCookieHeader(sessionToken), ...corsHeaders }
+              );
+            }
           }
         }
       } else if (path === '/api/auth/logout' && method === 'POST') {
@@ -358,6 +419,38 @@ export default {
             .run();
           response = json({ ok: true, stats: { ...stats, ...updates } }, 200, corsHeaders);
         }
+      } else if (path === '/api/scores/live' && method === 'POST') {
+        const user = await getUserFromSession(request, env);
+        const err = requireAuth(user);
+        if (err) response = err;
+        else {
+          const body = await request.json();
+          const score = Math.max(0, parseInt(body.score, 10) || 0);
+          const residents = Math.max(0, parseInt(body.residents, 10) || 0);
+          const developedZones = Math.max(0, parseInt(body.developed_zones, 10) || 0);
+          const disasterResilience = Math.max(
+            0,
+            Math.min(100, parseFloat(body.disaster_resilience) || 0)
+          );
+          const stats = await env.DB.prepare('SELECT * FROM player_stats WHERE user_id = ?')
+            .bind(user.id)
+            .first();
+          await env.DB.prepare(
+            `UPDATE player_stats SET best_score = ?, best_residents = ?,
+             best_developed_zones = ?, best_disaster_resilience = ?, last_played = ?
+             WHERE user_id = ?`
+          )
+            .bind(
+              Math.max(stats?.best_score || 0, score),
+              Math.max(stats?.best_residents || 0, residents),
+              Math.max(stats?.best_developed_zones || 0, developedZones),
+              Math.max(stats?.best_disaster_resilience || 0, disasterResilience),
+              new Date().toISOString(),
+              user.id
+            )
+            .run();
+          response = json({ ok: true }, 200, corsHeaders);
+        }
       } else if (path === '/api/leaderboard' && method === 'GET') {
         const hidden = await env.DB.prepare('SELECT value FROM app_settings WHERE key = ?')
           .bind('leaderboard_hidden')
@@ -392,6 +485,52 @@ export default {
           events = [];
         }
         response = json({ events }, 200, corsHeaders);
+      } else if (path === '/api/city-codes' && method === 'POST') {
+        const user = await getUserFromSession(request, env);
+        const err = requireAuth(user);
+        if (err) response = err;
+        else if (!isHsuId(user.username)) {
+          response = json({ error: 'Restore codes are for student HSU IDs' }, 400, corsHeaders);
+        } else {
+          const body = await request.json();
+          const token = randomRestoreToken();
+          await env.DB.prepare(
+            `INSERT INTO city_restore_codes (token, user_id, payload) VALUES (?, ?, ?)`
+          )
+            .bind(token, user.id, JSON.stringify(body.file || body))
+            .run();
+          response = json(
+            { code: `${user.username}-${token}`, token },
+            201,
+            corsHeaders
+          );
+        }
+      } else if (path.startsWith('/api/city-codes/') && method === 'GET') {
+        const user = await getUserFromSession(request, env);
+        const err = requireAuth(user);
+        if (err) response = err;
+        else {
+          const raw = decodeURIComponent(path.slice('/api/city-codes/'.length));
+          const parsed = parseRestoreCode(raw) || parseRestoreCode(`${user.username}-${raw}`);
+          if (!parsed || parsed.hsuId !== user.username) {
+            response = json(
+              { error: 'That code only works when you are logged in as the HSU ID on the slip.' },
+              403,
+              corsHeaders
+            );
+          } else {
+            const row = await env.DB.prepare(
+              'SELECT payload FROM city_restore_codes WHERE token = ? AND user_id = ?'
+            )
+              .bind(parsed.token, user.id)
+              .first();
+            if (!row) {
+              response = json({ error: 'Unknown restore code' }, 404, corsHeaders);
+            } else {
+              response = json({ file: JSON.parse(row.payload) }, 200, corsHeaders);
+            }
+          }
+        }
       } else if (path.startsWith('/api/admin/')) {
         const user = await getUserFromSession(request, env);
         const adminErr = requireAdmin(user);
@@ -414,7 +553,7 @@ export default {
           ];
           const sortCol = allowedSort.includes(sort) ? sort : 'best_score';
           let query = `
-            SELECT u.id, u.username, u.email, u.is_admin, u.is_active,
+            SELECT u.id, u.username, u.email, u.is_admin, u.is_active, u.last_login_at,
                    ps.best_score, ps.best_residents, ps.best_developed_zones,
                    ps.best_disaster_resilience, ps.total_sessions, ps.last_played
             FROM users u JOIN player_stats ps ON u.id = ps.user_id
@@ -425,9 +564,48 @@ export default {
             binds.push(`%${search}%`, `%${search}%`);
           }
           query += ` ORDER BY ${sortCol === 'username' ? 'u.username' : `ps.${sortCol}`} ${order}`;
-          const stmt = env.DB.prepare(query);
-          const rows = binds.length ? await stmt.bind(...binds).all() : await stmt.all();
-          response = json({ users: rows.results }, 200, corsHeaders);
+          try {
+            const stmt = env.DB.prepare(query);
+            const rows = binds.length ? await stmt.bind(...binds).all() : await stmt.all();
+            response = json({ users: rows.results }, 200, corsHeaders);
+          } catch {
+            query = query.replace(', u.last_login_at', '');
+            const stmt = env.DB.prepare(query);
+            const rows = binds.length ? await stmt.bind(...binds).all() : await stmt.all();
+            response = json({ users: rows.results }, 200, corsHeaders);
+          }
+        } else if (path === '/api/admin/class-code' && method === 'GET') {
+          const code = await getSetting(env, 'class_board_code', 'HSU2026');
+          response = json({ code }, 200, corsHeaders);
+        } else if (path === '/api/admin/class-code' && method === 'POST') {
+          const body = await request.json();
+          const code = String(body.code || '').trim();
+          if (code.length < 4) {
+            response = json({ error: 'Board code must be at least 4 characters' }, 400, corsHeaders);
+          } else {
+            await setSetting(env, 'class_board_code', code);
+            await auditLog(env, user.id, null, 'set_board_code', { code }, null);
+            response = json({ ok: true, code }, 200, corsHeaders);
+          }
+        } else if (path.match(/^\/api\/admin\/users\/\d+\/reset-lock$/) && method === 'POST') {
+          const targetId = parseInt(path.split('/')[4], 10);
+          const body = await request.json().catch(() => ({}));
+          const lock =
+            String(body.lock || '').trim() ||
+            randomRestoreToken() + randomRestoreToken().slice(0, 2).toLowerCase();
+          if (lock.length < 6) {
+            response = json({ error: 'Lock must be at least 6 characters' }, 400, corsHeaders);
+          } else {
+            const salt = generateSalt();
+            const passwordHash = await hashPassword(lock, salt);
+            await env.DB.prepare(
+              'UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?'
+            )
+              .bind(passwordHash, salt, targetId)
+              .run();
+            await auditLog(env, user.id, targetId, 'reset_lock', {}, null);
+            response = json({ ok: true, lock }, 200, corsHeaders);
+          }
         } else if (path.match(/^\/api\/admin\/users\/\d+$/) && method === 'GET') {
           const userId = parseInt(path.split('/').pop(), 10);
           const u = await env.DB.prepare(

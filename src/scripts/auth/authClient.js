@@ -22,10 +22,10 @@ async function request(path, options = {}) {
 }
 
 export const authClient = {
-  signup: (username, password, email) =>
-    request('/api/auth/signup', {
+  claim: (hsuId, lock, boardCode) =>
+    request('/api/auth/claim', {
       method: 'POST',
-      body: JSON.stringify({ username, password, email }),
+      body: JSON.stringify({ username: hsuId, password: lock, boardCode }),
     }),
   login: (username, password) =>
     request('/api/auth/login', {
@@ -34,19 +34,14 @@ export const authClient = {
     }),
   logout: () => request('/api/auth/logout', { method: 'POST' }),
   me: () => request('/api/me'),
-  resetRequest: (email) =>
-    request('/api/auth/reset-request', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
-    }),
-  reset: (token, password) =>
-    request('/api/auth/reset', {
-      method: 'POST',
-      body: JSON.stringify({ token, password }),
-    }),
   submitScore: (stats) =>
     request('/api/scores', { method: 'POST', body: JSON.stringify(stats) }),
+  liveScore: (stats) =>
+    request('/api/scores/live', { method: 'POST', body: JSON.stringify(stats) }),
   leaderboard: () => request('/api/leaderboard'),
+  saveCityCode: (file) =>
+    request('/api/city-codes', { method: 'POST', body: JSON.stringify({ file }) }),
+  loadCityCode: (code) => request(`/api/city-codes/${encodeURIComponent(code)}`),
   adminUsers: (params = {}) => {
     const q = new URLSearchParams(params).toString();
     return request(`/api/admin/users?${q}`);
@@ -62,6 +57,14 @@ export const authClient = {
     request('/api/admin/leaderboard/hide', {
       method: 'POST',
       body: JSON.stringify({ hidden }),
+    }),
+  adminGetClassCode: () => request('/api/admin/class-code'),
+  adminSetClassCode: (code) =>
+    request('/api/admin/class-code', { method: 'POST', body: JSON.stringify({ code }) }),
+  adminResetLock: (id, lock) =>
+    request(`/api/admin/users/${id}/reset-lock`, {
+      method: 'POST',
+      body: JSON.stringify(lock ? { lock } : {}),
     }),
   adminAuditLog: () => request('/api/admin/audit-log'),
   adminSessions: (userId) =>

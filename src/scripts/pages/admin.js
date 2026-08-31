@@ -17,6 +17,7 @@ const adminApp = {
       await this.loadUsers();
       await this.loadSessions();
       await this.loadAudit();
+      await this.loadClassCode();
       this.bindForm();
     } catch {
       document.getElementById('admin-status').textContent =
@@ -34,7 +35,7 @@ const adminApp = {
       <tr onclick="adminApp.selectUser(${u.id})" class="clickable-row">
         <td>${u.id}</td>
         <td>${u.username}</td>
-        <td>${u.email || ''}</td>
+        <td>${u.last_login_at ? new Date(u.last_login_at).toLocaleString() : ''}</td>
         <td>${u.best_score}</td>
         <td>${u.best_residents}</td>
         <td>${u.best_developed_zones}</td>
@@ -76,6 +77,33 @@ const adminApp = {
       await this.loadUsers();
       await this.loadAudit();
     });
+  },
+
+  async loadClassCode() {
+    try {
+      const data = await authClient.adminGetClassCode();
+      const el = document.getElementById('class-board-code');
+      if (el) el.value = data.code || '';
+    } catch {
+      /* older API */
+    }
+  },
+
+  async saveClassCode() {
+    const code = document.getElementById('class-board-code').value.trim();
+    if (code.length < 4) return alert('Board code must be at least 4 characters');
+    await authClient.adminSetClassCode(code);
+    alert('Board code updated');
+    await this.loadAudit();
+  },
+
+  async resetUserLock() {
+    const id = this.selectedUserId;
+    if (!id) return alert('Select a user');
+    if (!confirm('Issue a new personal lock? Show it to the student once. There is no email reset.')) return;
+    const data = await authClient.adminResetLock(id);
+    alert(`New lock (show once): ${data.lock}`);
+    await this.loadAudit();
   },
 
   async searchUsers() {

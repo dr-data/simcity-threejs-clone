@@ -1,67 +1,42 @@
 import { authClient } from '../auth/authClient.js';
-
-function showTab(tab) {
-  document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
-  document.getElementById(`tab-${tab}`).classList.add('active');
-  document.getElementById('form-login').style.display = tab === 'login' ? 'block' : 'none';
-  document.getElementById('form-signup').style.display = tab === 'signup' ? 'block' : 'none';
-  document.getElementById('form-reset').style.display = tab === 'reset' ? 'block' : 'none';
-}
-window.showTab = showTab;
+import { isHsuId, isLoginId, normalizeHsuId } from '../auth/hsuId.js';
 
 const msg = document.getElementById('auth-message');
 
 document.getElementById('form-login').addEventListener('submit', async (e) => {
   e.preventDefault();
+  const username = normalizeHsuId(document.getElementById('login-username').value);
+  if (!isLoginId(username)) {
+    msg.textContent = 'Use your HSU ID, like s123456.';
+    return;
+  }
   try {
-    await authClient.login(
-      document.getElementById('login-username').value,
-      document.getElementById('login-password').value
-    );
-    msg.textContent = 'Logged in! Redirecting...';
-    setTimeout(() => (window.location.href = '/'), 1000);
+    await authClient.login(username, document.getElementById('login-password').value);
+    msg.textContent = 'Logged in. Redirecting…';
+    setTimeout(() => (window.location.href = '/'), 600);
   } catch (err) {
     msg.textContent = err.message;
   }
 });
 
-document.getElementById('form-signup').addEventListener('submit', async (e) => {
+document.getElementById('form-claim').addEventListener('submit', async (e) => {
   e.preventDefault();
+  const username = normalizeHsuId(document.getElementById('claim-username').value);
+  const lock = document.getElementById('claim-lock').value;
+  const lock2 = document.getElementById('claim-lock2').value;
+  if (!isHsuId(username)) {
+    msg.textContent = 'HSU ID must look like s123456.';
+    return;
+  }
+  if (lock !== lock2) {
+    msg.textContent = 'Personal lock and confirmation do not match.';
+    return;
+  }
   try {
-    await authClient.signup(
-      document.getElementById('signup-username').value,
-      document.getElementById('signup-password').value,
-      document.getElementById('signup-email').value
-    );
-    msg.textContent = 'Account created! Redirecting...';
-    setTimeout(() => (window.location.href = '/'), 1000);
+    await authClient.claim(username, lock, document.getElementById('claim-board').value);
+    msg.textContent = 'ID claimed. Redirecting…';
+    setTimeout(() => (window.location.href = '/'), 600);
   } catch (err) {
     msg.textContent = err.message;
   }
 });
-
-document.getElementById('form-reset').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  try {
-    const result = await authClient.resetRequest(document.getElementById('reset-email').value);
-    msg.textContent = result.message || 'Check your email for reset instructions.';
-    if (result.resetToken) {
-      document.getElementById('reset-token').value = result.resetToken;
-    }
-  } catch (err) {
-    msg.textContent = err.message;
-  }
-});
-
-window.submitReset = async () => {
-  try {
-    await authClient.reset(
-      document.getElementById('reset-token').value,
-      document.getElementById('reset-password').value
-    );
-    msg.textContent = 'Password reset! You can log in now.';
-    showTab('login');
-  } catch (err) {
-    msg.textContent = err.message;
-  }
-};

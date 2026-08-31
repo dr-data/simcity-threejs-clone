@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS users (
   password_salt TEXT NOT NULL,
   is_admin INTEGER NOT NULL DEFAULT 0,
   is_active INTEGER NOT NULL DEFAULT 1,
+  last_login_at TEXT,
+  last_login_ip TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -67,6 +69,14 @@ CREATE TABLE IF NOT EXISTS app_settings (
 );
 
 INSERT OR IGNORE INTO app_settings (key, value) VALUES ('leaderboard_hidden', 'false');
+INSERT OR IGNORE INTO app_settings (key, value) VALUES ('class_board_code', 'HSU2026');
+
+CREATE TABLE IF NOT EXISTS city_restore_codes (
+  token TEXT PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  payload TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 
 CREATE TABLE IF NOT EXISTS disaster_events (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

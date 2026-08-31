@@ -13,6 +13,7 @@ import { SaveLoadManager } from './save/saveLoadManager.js';
 import { BudgetManager } from './budget/budgetManager.js';
 import { applyTemplate, CITY_TEMPLATES } from './templates/cityTemplates.js';
 import { authClient } from './auth/authClient.js';
+import { simIntervalMs } from './sim/simSpeed.js';
 
 /**
  * Manager for the Three.js scene. Handles rendering of a `City` object.
@@ -20,6 +21,8 @@ import { authClient } from './auth/authClient.js';
 export class Game {
   focusedObject = null;
   selectedObject = null;
+  simSpeed = 1;
+  _simTimer = null;
 
   constructor() {
     window.gameConfig = gameConfig;
@@ -54,7 +57,7 @@ export class Game {
       this._setupManagers();
       window.disasterManager?.animations?.setScene(this.scene);
       this.start();
-      setInterval(this.simulate.bind(this), 1000);
+      this._startSimClock();
       this._initSession();
     });
 
@@ -72,6 +75,19 @@ export class Game {
       (stats) => window.ui.showEndScreen(stats)
     );
     window.sessionManager.durationMs = gameConfig.sessionLengthMinutes * 60 * 1000;
+  }
+
+  _startSimClock() {
+    if (this._simTimer) clearInterval(this._simTimer);
+    this._simTimer = setInterval(this.simulate.bind(this), simIntervalMs(this.simSpeed));
+  }
+
+  setSimSpeed(speed) {
+    const next = Number(speed);
+    if (![1, 2, 5].includes(next)) return;
+    this.simSpeed = next;
+    this._startSimClock();
+    window.ui?.syncSimSpeedButtons?.(next);
   }
 
   async _initSession() {

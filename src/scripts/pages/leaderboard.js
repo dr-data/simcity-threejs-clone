@@ -27,7 +27,7 @@ async function load() {
       status.textContent = 'Leaderboard is temporarily hidden by admin.';
       return;
     }
-    status.textContent = `Top ${data.leaderboard.length} players — disaster totals are cumulative across sessions`;
+    status.textContent = `Top ${data.leaderboard.length} players — disaster totals are cumulative across sessions. Auto-refreshes.`;
     tbody.innerHTML = data.leaderboard
       .map(
         (row, i) => `
@@ -64,3 +64,4 @@ async function load() {
 }
 
 load();
+setInterval(load, 15000);

@@ -25,6 +25,7 @@ export class GameUI {
   isPaused = false;
   godMode = false;
   currentUser = null;
+  simSpeed = 1;
 
   get gameWindow() {
     return document.getElementById('render-target');
@@ -85,6 +86,7 @@ export class GameUI {
       pauseBtn.setAttribute('title', 'Pause or resume the simulation');
       pauseBtn.setAttribute('aria-label', 'Pause');
     }
+    this.syncSimSpeedButtons(1);
 
     const godBtn = document.getElementById('button-god');
     if (godBtn) {
@@ -143,6 +145,19 @@ export class GameUI {
       document.getElementById('pause-button-icon').src = pauseIconUrl;
       document.getElementById('paused-text').style.visibility = 'hidden';
     }
+  }
+
+  setSimSpeed(speed) {
+    if (this.isPaused) this.togglePause();
+    this.simSpeed = Number(speed);
+    window.game?.setSimSpeed(this.simSpeed);
+    this.syncSimSpeedButtons(this.simSpeed);
+  }
+
+  syncSimSpeedButtons(speed = this.simSpeed) {
+    document.querySelectorAll('[data-sim-speed]').forEach((btn) => {
+      btn.classList.toggle('selected', Number(btn.dataset.simSpeed) === Number(speed));
+    });
   }
 
   toggleGodMode() {
@@ -435,18 +450,56 @@ export class GameUI {
     }
   }
 
-  onSaveCity() {
-    window.saveLoadManager?.save();
-    this.showToast('City saved locally!');
+  onExportCity() {
+    window.saveLoadManager?.exportFile();
+    this.showToast('City file downloaded. Nothing is autosaved.');
   }
 
-  onLoadCity() {
-    if (window.saveLoadManager?.load()) {
-      this.showToast('City loaded!');
+  onImportCity() {
+    document.getElementById('city-import-file')?.click();
+  }
+
+  async onCityFilePicked(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    try {
+      const result = await window.saveLoadManager.importFile(file);
       window.ui.updateTitleBar(window.game);
       window.ui.updateStatsPanel(window.game.city);
-    } else {
-      this.showToast('No saved city found.');
+      if (result.foreign) {
+        this.showToast('Imported for practice only. This run will not update the leaderboard.');
+      } else {
+        this.showToast('City imported. The class timer did not change.');
+      }
+    } catch (err) {
+      this.showToast(err.message || 'Could not import that file');
+    }
+  }
+
+  async onIssueRestoreCode() {
+    try {
+      const code = await window.saveLoadManager.issueRestoreCode();
+      try {
+        await navigator.clipboard.writeText(code);
+      } catch {
+        /* clipboard may be blocked */
+      }
+      this.showToast(`Restore slip ${code}. Only works when you are logged in as that HSU ID.`);
+    } catch (err) {
+      this.showToast(err.message || 'Log in with your HSU ID to issue a restore slip');
+    }
+  }
+
+  async onRedeemRestoreCode() {
+    const code = document.getElementById('restore-code-input')?.value;
+    try {
+      await window.saveLoadManager.redeemRestoreCode(code);
+      window.ui.updateTitleBar(window.game);
+      window.ui.updateStatsPanel(window.game.city);
+      this.showToast('City restored from your slip. The class timer did not change.');
+    } catch (err) {
+      this.showToast(err.message || 'Could not redeem that slip');
     }
   }
 

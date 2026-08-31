@@ -120,3 +120,6 @@ export function pickRandomLevel() {
   }
   return 'moderate';
 }
+
+/** Typhoon path progress per animation frame. Old 0.018 crossed the map in ~1s at 60fps. */
+export const TYPHOON_BASE_SPEED = 0.0022;

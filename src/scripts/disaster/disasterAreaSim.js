@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { BuildingType } from '../sim/buildings/buildingType.js';
 import { DevelopmentState } from '../sim/buildings/modules/development.js';
 import { isPowerPlant } from '../sim/buildings/power/powerPlantTypes.js';
-import { DISASTER_LEVELS } from './disasterConfig.js';
+import { DISASTER_LEVELS, TYPHOON_BASE_SPEED } from './disasterConfig.js';
 import { DisasterZoneVisuals } from './disasterZoneVisuals.js';
 
 const RCI = [BuildingType.residential, BuildingType.commercial, BuildingType.industrial];
@@ -186,7 +186,7 @@ export class DisasterAreaSim {
       level,
       path,
       progress: 0,
-      speed: 0.018 * scale,
+      speed: TYPHOON_BASE_SPEED * scale,
       radius: Math.min(2, Math.ceil(scale)),
       hit: new Set(),
     });

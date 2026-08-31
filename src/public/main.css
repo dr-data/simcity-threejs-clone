@@ -313,6 +313,45 @@ h1 {
   align-items: center;
 }
 
+.sim-speed-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 4px 0 8px;
+}
+
+.speed-btn {
+  width: 48px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: #1e2331cd;
+  color: #e8eef8;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.speed-btn.selected {
+  background: #4a6a9a;
+  outline: 2px solid rgba(140, 170, 220, 0.7);
+}
+
+.speed-btn:hover {
+  background: #3a3f50d3;
+}
+
+.action-btn-row .speed-btn {
+  width: auto;
+  min-width: 44px;
+  height: 32px;
+  padding: 0 10px;
+  font-size: 0.85rem;
+}
+
 .ui-button.selected {
   background-color: #3a3f50d3;
   outline: 2px solid rgb(101, 101, 135);

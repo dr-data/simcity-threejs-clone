@@ -5,6 +5,8 @@ import { isAllowedOrigin } from '../../../worker/src/cors.js';
 import { fallbackTip } from '../ai/localTip.js';
 import { DisasterConsequences } from './disasterConsequences.js';
 import { HARM_INDEX_HELP } from './harmIndex.js';
+import { TYPHOON_BASE_SPEED } from './disasterConfig.js';
+import { simIntervalMs } from '../sim/simSpeed.js';
 
 describe('resolveApiBase', () => {
   it('replaces missing or placeholder Worker URLs', () => {
@@ -67,5 +69,20 @@ describe('disaster event log', () => {
     assert.equal(events[0].killed, 2);
     assert.equal(events[1].source, 'manual');
     assert.equal(events[1].type, 'flood');
+  });
+});
+
+describe('typhoon speed', () => {
+  it('crosses the map in several seconds, not about one second', () => {
+    assert.ok(TYPHOON_BASE_SPEED < 0.005);
+    assert.ok(TYPHOON_BASE_SPEED > 0.001);
+  });
+});
+
+describe('sim speed', () => {
+  it('maps 1x/2x/5x to interval length without pause as a speed', () => {
+    assert.equal(simIntervalMs(1), 1000);
+    assert.equal(simIntervalMs(2), 500);
+    assert.equal(simIntervalMs(5), 200);
   });
 });

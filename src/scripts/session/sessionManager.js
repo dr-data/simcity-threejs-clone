@@ -12,6 +12,8 @@ export class SessionManager {
   disastersSurvived = 0;
   achievedMilestones = new Set();
   lastStats = null;
+  _liveInterval = null;
+  _liveTimeout = null;
 
   constructor(onTick, onMilestone, onEnd) {
     this.onTick = onTick;
@@ -29,11 +31,53 @@ export class SessionManager {
     this.achievedMilestones.clear();
     this.lastStats = null;
     this._interval = setInterval(() => this.tick(), 1000);
+    clearTimeout(this._liveTimeout);
+    clearInterval(this._liveInterval);
+    this._liveTimeout = setTimeout(() => this.pushLiveScore(), 8000);
+    this._liveInterval = setInterval(() => this.pushLiveScore(), 45000);
   }
 
   stop() {
     this.isActive = false;
     clearInterval(this._interval);
+    clearTimeout(this._liveTimeout);
+    clearInterval(this._liveInterval);
+  }
+
+  collectLiveStats() {
+    const city = window.game?.city;
+    if (!city) return null;
+    const stats = city.getSessionStats();
+    const consequences = window.disasterManager?.consequences?.getSnapshot() ?? {};
+    const sessionStats = {
+      residents: stats.residents,
+      developedZones: stats.developedZones,
+      disasterResilience: stats.disasterResilience ?? 100,
+      disastersSurvived: this.disastersSurvived,
+      casualties: consequences.casualties ?? 0,
+      injured: consequences.injured ?? 0,
+      disaster_cost: consequences.disaster_cost ?? 0,
+    };
+    sessionStats.score = this.computeScore(sessionStats);
+    return sessionStats;
+  }
+
+  async pushLiveScore() {
+    if (!this.isActive || this.isEnded) return;
+    if (window.saveLoadManager?.scoreEligible === false) return;
+    if (!window.ui?.currentUser) return;
+    const stats = this.collectLiveStats();
+    if (!stats) return;
+    try {
+      await authClient.liveScore({
+        score: stats.score,
+        residents: stats.residents,
+        developed_zones: stats.developedZones,
+        disaster_resilience: stats.disasterResilience,
+      });
+    } catch {
+      /* guest, offline, or API down */
+    }
   }
 
   getTimeRemainingMs() {
@@ -118,22 +162,24 @@ export class SessionManager {
     });
     this.lastStats = sessionStats;
 
-    try {
-      await authClient.submitScore({
-        score: sessionStats.score,
-        residents: sessionStats.residents,
-        developed_zones: sessionStats.developedZones,
-        disaster_resilience: sessionStats.disasterResilience,
-        disasters_survived: sessionStats.disastersSurvived,
-        duration_seconds: sessionStats.durationSeconds,
-        casualties: sessionStats.casualties,
-        injured: sessionStats.injured,
-        disaster_cost: sessionStats.disaster_cost,
-        zones_damaged: sessionStats.zones_damaged,
-        disaster_log: sessionStats.disaster_log,
-      });
-    } catch {
-      /* offline or not logged in — stats still shown locally */
+    if (window.saveLoadManager?.scoreEligible !== false) {
+      try {
+        await authClient.submitScore({
+          score: sessionStats.score,
+          residents: sessionStats.residents,
+          developed_zones: sessionStats.developedZones,
+          disaster_resilience: sessionStats.disasterResilience,
+          disasters_survived: sessionStats.disastersSurvived,
+          duration_seconds: sessionStats.durationSeconds,
+          casualties: sessionStats.casualties,
+          injured: sessionStats.injured,
+          disaster_cost: sessionStats.disaster_cost,
+          zones_damaged: sessionStats.zones_damaged,
+          disaster_log: sessionStats.disaster_log,
+        });
+      } catch {
+        /* offline or not logged in — stats still shown locally */
+      }
     }
 
     if (this.onEnd) this.onEnd(sessionStats);

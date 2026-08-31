@@ -1179,6 +1179,10 @@ a {
     overflow: hidden;
   }
 
+  html, body {
+    --header-height: 44px;
+  }
+
   .desktop-only-inline,
   .hide-on-mobile,
   #stats-panel {

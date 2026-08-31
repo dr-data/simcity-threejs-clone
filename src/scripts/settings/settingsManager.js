@@ -1,15 +1,22 @@
 const STORAGE_KEY = 'simcity_user_settings';
+const SESSION_SKIP_KEY = 'simcity_tutorial_welcome_skipped';
 
 const defaults = {
   tutorialOnStart: true,
-  tutorialWelcomeSeen: false,
+  tutorialTourCompleted: false,
 };
 
 export const settingsManager = {
   get() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? { ...defaults, ...JSON.parse(raw) } : { ...defaults };
+      const stored = raw ? JSON.parse(raw) : {};
+      // Migrate legacy flag: welcome seen without completing tour should not block replay
+      if (stored.tutorialWelcomeSeen && !stored.tutorialTourCompleted) {
+        stored.tutorialTourCompleted = false;
+      }
+      delete stored.tutorialWelcomeSeen;
+      return { ...defaults, ...stored };
     } catch {
       return { ...defaults };
     }
@@ -29,15 +36,39 @@ export const settingsManager = {
     return this.set({ tutorialOnStart: enabled });
   },
 
-  hasSeenWelcome() {
-    return this.get().tutorialWelcomeSeen;
+  hasCompletedTour() {
+    return this.get().tutorialTourCompleted;
   },
 
-  markWelcomeSeen() {
-    return this.set({ tutorialWelcomeSeen: true });
+  markTourCompleted() {
+    return this.set({ tutorialTourCompleted: true });
   },
 
-  resetWelcomeSeen() {
-    return this.set({ tutorialWelcomeSeen: false });
+  resetTourCompleted() {
+    return this.set({ tutorialTourCompleted: false });
+  },
+
+  wasWelcomeSkippedThisSession() {
+    try {
+      return sessionStorage.getItem(SESSION_SKIP_KEY) === '1';
+    } catch {
+      return false;
+    }
+  },
+
+  markWelcomeSkippedThisSession() {
+    try {
+      sessionStorage.setItem(SESSION_SKIP_KEY, '1');
+    } catch {
+      /* ignore */
+    }
+  },
+
+  clearWelcomeSkippedThisSession() {
+    try {
+      sessionStorage.removeItem(SESSION_SKIP_KEY);
+    } catch {
+      /* ignore */
+    }
   },
 };

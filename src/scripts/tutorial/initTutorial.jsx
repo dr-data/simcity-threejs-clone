@@ -4,11 +4,13 @@ import { TutorialRoot } from './TutorialRoot.jsx';
 let root = null;
 let running = false;
 let finishCallback = null;
+let tourGeneration = 0;
 
 function render() {
   if (!root) return;
   root.render(
     <TutorialRoot
+      key={tourGeneration}
       run={running}
       onFinish={() => {
         running = false;
@@ -31,6 +33,7 @@ export function startGuidedTour(onFinish) {
   if (!root) initTutorial();
   finishCallback = onFinish;
   running = true;
+  tourGeneration += 1;
   render();
 }
 

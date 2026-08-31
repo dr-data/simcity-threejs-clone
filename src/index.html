@@ -90,10 +90,10 @@
             <a href="/leaderboard.html">Board</a>
             <a href="/admin.html" id="nav-admin" style="display:none">Admin</a>
             <a href="#" onclick="ui.openHelp();return false;">Help</a>
-            <button type="button" class="header-nav-btn" onclick="ui.openSettings()" title="Settings">⚙</button>
+            <button type="button" id="settings-btn" class="header-nav-btn" onclick="ui.openSettings()" title="Settings">⚙</button>
           </nav>
           <div class="header-actions mobile-only">
-            <button type="button" class="header-icon-btn" onclick="ui.openSettings()" title="Settings">
+            <button type="button" id="settings-btn-mobile" class="header-icon-btn" onclick="ui.openSettings()" title="Settings">
               <img src="/icons/settings-color.svg" alt="" class="header-action-icon">
             </button>
             <button type="button" class="header-icon-btn" onclick="ui.toggleMorePanel()" title="Menu">
@@ -101,7 +101,7 @@
             </button>
           </div>
         </div>
-        <div id="mobile-stats-strip" class="mobile-only mobile-stats">
+        <div id="mobile-stats-strip" class="mobile-only mobile-stats collapsed" aria-hidden="true">
           <span><img src="/icons/person.png" alt="" class="mini-stat-icon"> <span id="stat-residents-mobile">0</span></span>
           <span>Zones <strong id="stat-zones-mobile">0</strong></span>
           <span>Power <strong id="stat-power-mobile">0/0</strong></span>
@@ -316,9 +316,9 @@
         <h2>Settings</h2>
         <label class="settings-toggle">
           <input type="checkbox" id="setting-tutorial-on-start" onchange="ui.onTutorialSettingChange(event)">
-          <span>Show guided tutorial when starting (first visit)</span>
+          <span>Show guided tutorial when starting</span>
         </label>
-        <p class="settings-hint">When enabled, new players see a welcome prompt and optional step-by-step tour.</p>
+        <p class="settings-hint">When enabled, you see a welcome prompt each visit until you finish or skip the tour. Use Replay Guided Tour anytime.</p>
         <div class="settings-section">
           <h3>City</h3>
           <select id="settings-template-select" class="settings-select" onchange="ui.onSettingsTemplateChange(event)"></select>

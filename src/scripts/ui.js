@@ -275,27 +275,35 @@ export class GameUI {
   }
 
   maybeShowTutorialWelcome() {
-    if (!settingsManager.isTutorialOnStart()) return;
-    if (settingsManager.hasSeenWelcome()) return;
+    const forceTutorial =
+      new URLSearchParams(window.location.search).get('tutorial') === '1';
+    if (!forceTutorial && !settingsManager.isTutorialOnStart()) return;
+    if (!forceTutorial && settingsManager.hasCompletedTour()) return;
+    if (!forceTutorial && settingsManager.wasWelcomeSkippedThisSession()) return;
+
     const el = document.getElementById('tutorial-welcome');
     if (el) el.style.display = 'flex';
   }
 
   acceptTutorialWelcome() {
     document.getElementById('tutorial-welcome').style.display = 'none';
-    this.replayGuidedTour(() => settingsManager.markWelcomeSeen());
+    settingsManager.clearWelcomeSkippedThisSession();
+    this.replayGuidedTour();
   }
 
   skipTutorialWelcome() {
     document.getElementById('tutorial-welcome').style.display = 'none';
-    settingsManager.markWelcomeSeen();
+    settingsManager.markWelcomeSkippedThisSession();
   }
 
   replayGuidedTour(onComplete) {
+    this.closeSettings();
     document.getElementById('tutorial-welcome').style.display = 'none';
+    settingsManager.resetTourCompleted();
+    settingsManager.clearWelcomeSkippedThisSession();
     initTutorial();
     startGuidedTour(() => {
-      settingsManager.markWelcomeSeen();
+      settingsManager.markTourCompleted();
       onComplete?.();
     });
   }

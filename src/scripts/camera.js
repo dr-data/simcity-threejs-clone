@@ -61,6 +61,14 @@ export class CameraManager {
     });
   }
 
+  fitToCity(size) {
+    const n = Number(size) || 16;
+    this.cameraOrigin.set(n / 2 - 0.5, 0, n / 2 - 0.5);
+    this.cameraRadius = Math.min(MAX_CAMERA_RADIUS, Math.max(MIN_CAMERA_RADIUS, 8 / n));
+    this._transitioning = false;
+    this.updateCameraPosition();
+  }
+
   setView(viewId) {
     const preset = VIEW_PRESETS[viewId];
     if (!preset) return;

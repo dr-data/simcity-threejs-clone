@@ -1,5 +1,6 @@
 import gameConfig from '../gameConfig.js';
 import { authClient } from '../auth/authClient.js';
+import { computeDrillScore } from './drillScore.js';
 
 /**
  * Manages timed classroom sessions: scoring, milestones, and end screen.
@@ -14,6 +15,7 @@ export class SessionManager {
   lastStats = null;
   _liveInterval = null;
   _liveTimeout = null;
+  startingBuildings = 0;
 
   constructor(onTick, onMilestone, onEnd) {
     this.onTick = onTick;
@@ -30,6 +32,7 @@ export class SessionManager {
     this.disastersSurvived = 0;
     this.achievedMilestones.clear();
     this.lastStats = null;
+    this.startingBuildings = window.game?.city?.countBuildings?.() ?? 0;
     this._interval = setInterval(() => this.tick(), 1000);
     clearTimeout(this._liveTimeout);
     clearInterval(this._liveInterval);
@@ -49,6 +52,8 @@ export class SessionManager {
     if (!city) return null;
     const stats = city.getSessionStats();
     const consequences = window.disasterManager?.consequences?.getSnapshot() ?? {};
+    const currentBuildings = stats.buildings ?? city.countBuildings();
+    const startingBuildings = this.startingBuildings || currentBuildings;
     const sessionStats = {
       residents: stats.residents,
       developedZones: stats.developedZones,
@@ -57,6 +62,9 @@ export class SessionManager {
       casualties: consequences.casualties ?? 0,
       injured: consequences.injured ?? 0,
       disaster_cost: consequences.disaster_cost ?? 0,
+      startingBuildings,
+      buildingsRemaining: currentBuildings,
+      buildingsDestroyed: Math.max(0, startingBuildings - currentBuildings),
     };
     sessionStats.score = this.computeScore(sessionStats);
     return sessionStats;
@@ -102,24 +110,26 @@ export class SessionManager {
   }
 
   computeScore(stats) {
-    const residentPts = stats.residents * 2;
-    const zonePts = stats.developedZones * 15;
-    const resiliencePts = Math.round(stats.disasterResilience * 3);
-    const disasterBonus = this.disastersSurvived * 50;
-    const casualtyPenalty = (stats.casualties ?? 0) * 12 + (stats.injured ?? 0) * 4;
-    const costPenalty = Math.floor((stats.disaster_cost ?? 0) / 20);
-    return Math.max(
-      0,
-      residentPts + zonePts + resiliencePts + disasterBonus - casualtyPenalty - costPenalty
-    );
+    return computeDrillScore({
+      buildingsDestroyed: stats.buildingsDestroyed ?? 0,
+      buildingsRemaining: stats.buildingsRemaining ?? 0,
+      startingBuildings: stats.startingBuildings ?? this.startingBuildings,
+      disastersSurvived: this.disastersSurvived,
+      casualties: stats.casualties ?? 0,
+      injured: stats.injured ?? 0,
+    });
   }
 
   checkMilestones(stats) {
+    const current = window.game?.city?.countBuildings?.() ?? 0;
     const snapshot = {
       residents: stats.residents,
       developedZones: stats.developedZones,
       disasterResilience: stats.disasterResilience,
       disastersSurvived: this.disastersSurvived,
+      startingBuildings: this.startingBuildings,
+      buildingsDestroyed: Math.max(0, this.startingBuildings - current),
+      disasterCount: window.disasterManager?.disasterCount ?? 0,
     };
     for (const m of gameConfig.milestones) {
       if (!this.achievedMilestones.has(m.id) && m.check(snapshot)) {
@@ -143,6 +153,9 @@ export class SessionManager {
 
     const disasterResilience = stats.disasterResilience ?? 100;
     const consequences = window.disasterManager?.consequences?.getSnapshot() ?? {};
+    const currentBuildings = window.game?.city?.countBuildings?.() ?? stats.developedZones;
+    const startingBuildings = this.startingBuildings || currentBuildings;
+    const buildingsDestroyed = Math.max(0, startingBuildings - currentBuildings);
     const sessionStats = {
       residents: stats.residents,
       developedZones: stats.developedZones,
@@ -155,6 +168,9 @@ export class SessionManager {
       zones_damaged: consequences.zones_damaged ?? 0,
       disaster_index: consequences.disaster_index ?? 0,
       disaster_log: consequences.disaster_log ?? [],
+      startingBuildings,
+      buildingsRemaining: currentBuildings,
+      buildingsDestroyed,
     };
     sessionStats.score = this.computeScore({
       ...sessionStats,

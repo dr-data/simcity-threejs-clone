@@ -16,6 +16,8 @@ import {
 import { TOOL_TIPS, formatToolHint } from './toolTips.js';
 import { formatDisasterEvent } from './disaster/disasterLogFormat.js';
 import { fallbackTip } from './ai/localTip.js';
+import { CITY_SIZE_PRESETS, TIME_PRESETS_MINUTES, LAYOUT_STYLES, getSizePreset, estimateBuildingCount } from './templates/citySizes.js';
+import { generateCityLayout } from './templates/generateCity.js';
 
 const SIM_START_DATE = gameConfig.simStartDate || '2026-09-01';
 
@@ -26,6 +28,9 @@ export class GameUI {
   godMode = false;
   currentUser = null;
   simSpeed = 1;
+  mayorName = '';
+  setupSizeId = 'town';
+  setupMinutes = 15;
 
   get gameWindow() {
     return document.getElementById('render-target');
@@ -185,6 +190,12 @@ export class GameUI {
     }
   }
 
+  setMayorName(name) {
+    this.mayorName = String(name || '').trim();
+    const el = document.getElementById('mayor-name');
+    if (el) el.textContent = this.mayorName ? `Mayor ${this.mayorName}` : '';
+  }
+
   updateTitleBar(game) {
     document.getElementById('city-name').innerHTML = game.city.name;
     document.getElementById('population-counter').innerHTML = game.city.population;
@@ -207,6 +218,10 @@ export class GameUI {
     set('stat-zones', stats.developedZones);
     set('stat-power', `${stats.power.capacity}/${stats.power.demand} kW`);
     set('stat-resilience', `${stats.disasterResilience}%`);
+    const start = window.sessionManager?.startingBuildings || stats.buildings;
+    const left = stats.buildings ?? 0;
+    set('stat-buildings', `${left}/${start}`);
+    set('stat-buildings-mobile', `${left}/${start}`);
     set('stat-residents-mobile', stats.residents);
     set('stat-zones-mobile', stats.developedZones);
     set('stat-power-mobile', `${stats.power.capacity}/${stats.power.demand}`);
@@ -313,8 +328,119 @@ export class GameUI {
     if (!forceTutorial && settingsManager.hasCompletedTour()) return;
     if (!forceTutorial && settingsManager.wasWelcomeSkippedThisSession()) return;
 
+    if (document.getElementById('session-setup')?.style.display === 'flex') return;
     const el = document.getElementById('tutorial-welcome');
     if (el) el.style.display = 'flex';
+  }
+
+  showSessionSetup() {
+    const overlay = document.getElementById('session-setup');
+    if (!overlay) return;
+    const last = settingsManager.getLastSetup();
+    const mayor = document.getElementById('setup-mayor');
+    const city = document.getElementById('setup-city');
+    if (mayor && !mayor.value) {
+      mayor.value = last.mayorName || this.currentUser?.username || '';
+    }
+    if (city && !city.value) {
+      city.value = last.cityName || '';
+    }
+    this.setupMinutes = last.minutes || 15;
+    this.setupSizeId = last.sizeId || 'town';
+    this._renderSetupChoices();
+    overlay.style.display = 'flex';
+  }
+
+  _renderSetupChoices() {
+    const timeRow = document.getElementById('setup-times');
+    if (timeRow) {
+      timeRow.innerHTML = TIME_PRESETS_MINUTES.map(
+        (m) =>
+          `<button type="button" class="choice-chip${m === this.setupMinutes ? ' selected' : ''}" data-minutes="${m}">${m} min</button>`
+      ).join('');
+      timeRow.querySelectorAll('button').forEach((btn) => {
+        btn.onclick = () => {
+          this.setupMinutes = Number(btn.dataset.minutes);
+          this._renderSetupChoices();
+        };
+      });
+    }
+    const sizeRow = document.getElementById('setup-sizes');
+    if (sizeRow) {
+      sizeRow.innerHTML = CITY_SIZE_PRESETS.map((p) => {
+        const n = estimateBuildingCount(p.size, p.density);
+        return `<button type="button" class="choice-card${p.id === this.setupSizeId ? ' selected' : ''}" data-size="${p.id}">
+          <strong>${p.label}</strong>
+          <span>${p.size}×${p.size} · ~${n} buildings</span>
+          <small>${p.difficulty}. ${p.hint}</small>
+        </button>`;
+      }).join('');
+      sizeRow.querySelectorAll('button').forEach((btn) => {
+        btn.onclick = () => {
+          this.setupSizeId = btn.dataset.size;
+          this._renderSetupChoices();
+        };
+      });
+    }
+  }
+
+  async submitSessionSetup(event) {
+    event?.preventDefault?.();
+    const mayorName = document.getElementById('setup-mayor')?.value.trim();
+    const cityName = document.getElementById('setup-city')?.value.trim();
+    const useAi = document.getElementById('setup-ai')?.checked !== false;
+    const msg = document.getElementById('setup-message');
+    if (!mayorName || !cityName) {
+      if (msg) msg.textContent = 'Enter your name and a city name.';
+      return;
+    }
+    const preset = getSizePreset(this.setupSizeId);
+    const startBtn = document.getElementById('setup-start');
+    if (startBtn) startBtn.disabled = true;
+    if (msg) msg.textContent = useAi ? 'Asking AI for a layout mix…' : 'Building the map…';
+
+    let style = LAYOUT_STYLES[Math.floor(Math.random() * LAYOUT_STYLES.length)];
+    let seed = Math.floor(Math.random() * 1e9) + 1;
+    try {
+      if (useAi && gameConfig.aiEnabled) {
+        const plan = await authClient.aiCityPlan({
+          size: preset.size,
+          density: preset.density,
+        });
+        if (plan?.style) style = plan.style;
+        if (plan?.seed) seed = plan.seed;
+      }
+    } catch {
+      /* local generator still runs */
+    }
+
+    const layout = generateCityLayout({
+      size: preset.size,
+      density: preset.density,
+      style,
+      seed,
+    });
+    settingsManager.setLastSetup({
+      mayorName,
+      cityName,
+      minutes: this.setupMinutes,
+      sizeId: this.setupSizeId,
+    });
+    const overlay = document.getElementById('session-setup');
+    if (overlay) overlay.style.display = 'none';
+    if (startBtn) startBtn.disabled = false;
+    if (msg) msg.textContent = '';
+    window.game?.beginDrill({
+      size: preset.size,
+      cityName,
+      mayorName,
+      minutes: this.setupMinutes,
+      buildings: layout.buildings,
+      budget: gameConfig.startingBudget + Math.round(layout.buildings.length * 8),
+    });
+    this.showToast(
+      `${layout.style.replace(/-/g, ' ')} · ${layout.buildings.length} buildings. Flatten them before time is up.`
+    );
   }
 
   acceptTutorialWelcome() {
@@ -417,6 +543,10 @@ export class GameUI {
     document.getElementById('end-injured').textContent = stats.injured ?? 0;
     document.getElementById('end-disaster-cost').textContent = `$${stats.disaster_cost ?? 0}`;
     document.getElementById('end-disaster-index').textContent = stats.disaster_index ?? 0;
+    const gone = document.getElementById('end-destroyed');
+    if (gone) {
+      gone.textContent = `${stats.buildingsDestroyed ?? 0} / ${stats.startingBuildings ?? 0}`;
+    }
     const logEl = document.getElementById('end-disaster-log');
     if (logEl) {
       const events = window.disasterManager?.consequences?.getEvents?.() ?? [];
@@ -694,4 +824,3 @@ window.ui.populateTemplates();
 window.ui.populateDisasterOptions();
 window.ui.initTooltips();
 initTutorial();
-window.ui.maybeShowTutorialWelcome();

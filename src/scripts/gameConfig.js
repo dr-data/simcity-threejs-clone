@@ -13,17 +13,12 @@ const defaults = {
   allowGodMode: true,
   allowCheats: true,
   aiEnabled: true,
-  defaultTemplate: 'disaster-lab',
+  defaultTemplate: 'blank',
   quickStartTemplate: 'disaster-lab',
   showTutorial: true,
   milestones: [
-    { id: 'residents-500', label: 'Reach 500 residents', check: (s) => s.residents >= 500 },
-    {
-      id: 'disaster-survivor',
-      label: 'Survive 2 disasters with <20% damage',
-      check: (s) => s.disastersSurvived >= 2 && s.disasterResilience >= 80,
-    },
-    { id: 'zones-20', label: 'Develop 20 zones', check: (s) => s.developedZones >= 20 },
+    { id: 'flatten-half', label: 'Destroy half the buildings', check: (s) => s.buildingsDestroyed >= (s.startingBuildings || 1) / 2 },
+    { id: 'disaster-two', label: 'Run 2 disasters', check: (s) => (s.disasterCount || 0) >= 2 },
   ],
   buildingCosts: {
     residential: 100,
@@ -37,9 +32,9 @@ const defaults = {
     'power-line': 25,
   },
   reflectionPrompts: [
-    'What trade-offs did you make between growth, sustainability, and safety?',
-    'What was your biggest challenge?',
-    'How did disasters change your planning?',
+    'Which disaster type cleared the most buildings, and why?',
+    'Did a bigger map leave you too much standing when time ran out?',
+    'Would a shorter timer have changed which buildings you hit first?',
   ],
 };
 

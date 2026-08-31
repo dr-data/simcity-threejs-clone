@@ -297,6 +297,66 @@ h1 {
   margin-bottom: 16px;
 }
 
+.setup-panel {
+  max-width: 560px;
+}
+
+.choice-row, .choice-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+
+.choice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.choice-chip, .choice-card {
+  background: #2a3348;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+
+.choice-chip {
+  padding: 8px 12px;
+  font-size: 0.9rem;
+}
+
+.choice-card {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.choice-card span {
+  font-size: 0.8rem;
+  color: #c8d8f0;
+}
+
+.choice-card small {
+  font-size: 0.75rem;
+  color: #9aa8c0;
+  line-height: 1.3;
+}
+
+.choice-chip.selected, .choice-card.selected {
+  outline: 2px solid rgba(140, 170, 220, 0.8);
+  background: #3a5177;
+}
+
+.mayor-name {
+  display: block;
+  font-size: 0.8rem;
+  color: #9aa8c0;
+}
+
 .ui-button {
   height: 48px;
   width: 48px;
@@ -1251,6 +1311,14 @@ a {
     height: 100%;
     height: 100dvh;
     overflow: hidden;
+  }
+
+  .choice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .setup-panel {
+    max-height: 88vh;
   }
 
   html, body {

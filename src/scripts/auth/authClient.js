@@ -74,6 +74,8 @@ export const authClient = {
   disasterLog: () => request('/api/disaster-log'),
   aiTip: (stats) =>
     request('/api/ai/tip', { method: 'POST', body: JSON.stringify(stats) }),
+  aiCityPlan: (opts) =>
+    request('/api/ai/city-plan', { method: 'POST', body: JSON.stringify(opts) }),
   aiSessionReview: (stats) =>
     request('/api/ai/session-review', { method: 'POST', body: JSON.stringify(stats) }),
 };

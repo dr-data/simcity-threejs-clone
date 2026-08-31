@@ -47,7 +47,7 @@ export async function incrementAiQuota(env, userId, ip) {
     .run();
 }
 
-async function runModel(env, userPrompt, maxTokens = 100) {
+async function runModel(env, userPrompt, maxTokens = 100, system) {
   if (!env.AI) {
     throw new Error('Workers AI binding not configured');
   }
@@ -56,8 +56,9 @@ async function runModel(env, userPrompt, maxTokens = 100) {
       {
         role: 'system',
         content:
+          system ||
           'You are a concise urban planning tutor for high-school students playing a city-building game. ' +
-          'Use plain language. No markdown, bullets, or numbered lists. Max 2 short sentences.',
+            'Use plain language. No markdown, bullets, or numbered lists. Max 2 short sentences.',
       },
       { role: 'user', content: userPrompt },
     ],
@@ -93,4 +94,43 @@ export async function generateSessionReview(env, stats) {
     : [];
   const report = rMatch ? rMatch[1].trim() : '';
   return { questions, report };
+}
+
+const CITY_STYLES = [
+  'grid-quarters',
+  'harbor-spine',
+  'industrial-ring',
+  'campus',
+  'twin-cores',
+  'sprawl',
+];
+
+export function fallbackCityPlan() {
+  const seed = Math.floor(Math.random() * 1e9) + 1;
+  return {
+    style: CITY_STYLES[seed % CITY_STYLES.length],
+    seed,
+    flavor: 'A mixed classroom layout.',
+  };
+}
+
+export async function generateCityPlan(env, { size, density } = {}) {
+  try {
+    const text = await runModel(
+      env,
+      `Pick one layout style from: ${CITY_STYLES.join(', ')}. Size ${size || 16}, density ${density || 0.3}. Reply JSON only: {"style":"harbor-spine","seed":12345,"flavor":"short phrase"}`,
+      90,
+      'You pick city layout styles for a classroom disaster drill. Reply with JSON only. No markdown.'
+    );
+    const match = String(text).match(/\{[\s\S]*\}/);
+    if (match) {
+      const parsed = JSON.parse(match[0]);
+      const style = CITY_STYLES.includes(parsed.style) ? parsed.style : fallbackCityPlan().style;
+      const seed = Number(parsed.seed) > 0 ? Math.floor(Number(parsed.seed)) : Math.floor(Math.random() * 1e9);
+      return { style, seed, flavor: String(parsed.flavor || '').slice(0, 80) };
+    }
+  } catch (error) {
+    console.error('AI city plan failed', error);
+  }
+  return fallbackCityPlan();
 }

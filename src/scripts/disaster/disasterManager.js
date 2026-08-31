@@ -68,6 +68,7 @@ export class DisasterManager {
     this.animations.update();
     this.areaSim.update();
 
+    if (!window.sessionManager?.isActive) return;
     if (window.ui?.godMode) return;
     if (this.disasterCount >= this._plannedDisasters) return;
     if (Date.now() >= this._nextDisasterTime) {

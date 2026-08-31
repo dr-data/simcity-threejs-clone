@@ -225,12 +225,24 @@ export class City extends THREE.Group {
   }
 
   getSessionStats() {
+    const buildings = this.countBuildings();
     return {
       residents: this.population,
       developedZones: this.getDevelopedZoneCount(),
       disasterResilience: this.getDisasterResilience(),
       power: this.getPowerStats(),
+      buildings,
     };
+  }
+
+  countBuildings() {
+    let n = 0;
+    for (let x = 0; x < this.size; x++) {
+      for (let y = 0; y < this.size; y++) {
+        if (this.getTile(x, y)?.building) n++;
+      }
+    }
+    return n;
   }
 
   serialize() {

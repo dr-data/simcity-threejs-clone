@@ -71,4 +71,22 @@ export const settingsManager = {
       /* ignore */
     }
   },
+
+  getLastSetup() {
+    try {
+      const raw = localStorage.getItem('classroom_session_setup');
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  },
+
+  setLastSetup(data) {
+    try {
+      localStorage.setItem('classroom_session_setup', JSON.stringify(data));
+    } catch {
+      /* ignore */
+    }
+    return data;
+  },
 };

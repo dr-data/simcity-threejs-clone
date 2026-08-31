@@ -11,7 +11,8 @@ import { DisasterManager } from './disaster/disasterManager.js';
 import { CheatConsole } from './cheat/cheatConsole.js';
 import { SaveLoadManager } from './save/saveLoadManager.js';
 import { BudgetManager } from './budget/budgetManager.js';
-import { applyTemplate, CITY_TEMPLATES } from './templates/cityTemplates.js';
+import { applyTemplate } from './templates/cityTemplates.js';
+import { applyGeneratedLayout } from './templates/generateCity.js';
 import { authClient } from './auth/authClient.js';
 import { simIntervalMs } from './sim/simSpeed.js';
 
@@ -23,6 +24,7 @@ export class Game {
   selectedObject = null;
   simSpeed = 1;
   _simTimer = null;
+  awaitingSetup = true;
 
   constructor() {
     window.gameConfig = gameConfig;
@@ -98,25 +100,35 @@ export class Game {
       window.ui.setUser(null);
     }
 
-    const quickStart = new URLSearchParams(window.location.search).get('quick') === '1';
-    if (quickStart || gameConfig.defaultTemplate !== 'blank') {
-      const templateId = quickStart ? gameConfig.quickStartTemplate : gameConfig.defaultTemplate;
-      if (CITY_TEMPLATES[templateId]) {
-        const result = applyTemplate(this.city, templateId);
-        this.initialize(this.city);
-        if (result) window.budgetManager.budget = result.budget;
-      }
-    } else {
-      window.budgetManager.budget = gameConfig.startingBudget;
-    }
+    window.budgetManager.budget = gameConfig.startingBudget;
+    this.awaitingSetup = true;
+    window.ui.showSessionSetup();
+  }
 
+  beginDrill({ size, cityName, mayorName, minutes, buildings, budget }) {
+    const n = Number(size) || 16;
+    this.city = new City(n, cityName || 'My City');
+    this.initialize(this.city);
+    window.disasterManager?.animations?.setScene(this.scene);
+    if (buildings?.length) {
+      applyGeneratedLayout(this.city, buildings);
+    }
+    if (window.budgetManager) {
+      window.budgetManager.budget = budget ?? gameConfig.startingBudget;
+    }
+    this.cameraManager?.fitToCity(n);
+    this.awaitingSetup = false;
+    window.sessionManager.durationMs = Math.max(1, Number(minutes) || 15) * 60 * 1000;
+    window.ui.setMayorName(mayorName);
+    window.disasterManager.onSessionStart(this.city);
+    const extra = Math.max(0, Math.round((n - 12) / 4));
+    window.disasterManager.configure(1 + extra, 3 + extra, 0.3);
+    window.sessionManager.start();
+    window.ui.updateTitleBar(this);
+    window.ui.updateStatsPanel(this.city);
     if (gameConfig.showTutorial) {
       window.ui.maybeShowTutorialWelcome();
     }
-
-    window.disasterManager.onSessionStart(this.city);
-    window.sessionManager.start();
-    window.ui.updateStatsPanel(this.city);
   }
 
   initialize(city) {
@@ -147,10 +159,11 @@ export class Game {
     sun.position.set(-10, 20, 0);
     sun.castShadow = this.renderer.shadowMap.enabled;
     if (sun.castShadow) {
-      sun.shadow.camera.left = -20;
-      sun.shadow.camera.right = 20;
-      sun.shadow.camera.top = 20;
-      sun.shadow.camera.bottom = -20;
+      const span = Math.max(20, (this.city?.size || 16) * 1.2);
+      sun.shadow.camera.left = -span;
+      sun.shadow.camera.right = span;
+      sun.shadow.camera.top = span;
+      sun.shadow.camera.bottom = -span;
       sun.shadow.mapSize.width = 1024;
       sun.shadow.mapSize.height = 1024;
       sun.shadow.camera.near = 10;
@@ -185,7 +198,7 @@ export class Game {
   }
 
   simulate() {
-    if (window.ui.isPaused || window.sessionManager?.isEnded) return;
+    if (this.awaitingSetup || window.ui.isPaused || window.sessionManager?.isEnded) return;
 
     this.city.simulate(1);
     window.ui.updateTitleBar(this);

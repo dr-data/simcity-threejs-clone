@@ -21,6 +21,7 @@ import {
   incrementAiQuota,
   generateTip,
   generateSessionReview,
+  generateCityPlan,
 } from './ai.js';
 import { corsHeaders as buildCorsHeaders } from './cors.js';
 import { isHsuId, isLoginId, normalizeHsuId, parseRestoreCode, randomRestoreToken } from './hsu.js';
@@ -751,6 +752,19 @@ export default {
               429,
               corsHeaders
             );
+          } else if (path === '/api/ai/city-plan' && method === 'POST') {
+            const body = await request.json().catch(() => ({}));
+            try {
+              const plan = await generateCityPlan(env, {
+                size: parseInt(body.size, 10) || 16,
+                density: parseFloat(body.density) || 0.34,
+              });
+              await incrementAiQuota(env, user?.id, ip);
+              response = json({ ...plan, remaining: quota.remaining - 1 }, 200, corsHeaders);
+            } catch (e) {
+              console.error('AI city plan error', e);
+              response = json({ error: 'AI temporarily unavailable' }, 503, corsHeaders);
+            }
           } else if (path === '/api/ai/tip' && method === 'POST') {
             const body = await request.json();
             const stats = {

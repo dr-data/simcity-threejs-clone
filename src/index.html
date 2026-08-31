@@ -41,6 +41,31 @@
       </div>
     </div>
 
+    <div id="session-setup" class="modal-overlay" style="display: none;">
+      <div class="modal-panel setup-panel">
+        <h2>Start your drill</h2>
+        <p class="settings-hint">Name yourself and your city. Bigger maps spawn more buildings. You have until the clock runs out to knock them down with disasters.</p>
+        <form id="session-setup-form" class="auth-form" onsubmit="ui.submitSessionSetup(event); return false;">
+          <label>Your name
+            <input type="text" id="setup-mayor" required maxlength="32" autocomplete="nickname" placeholder="Alex">
+          </label>
+          <label>City name
+            <input type="text" id="setup-city" required maxlength="40" placeholder="North Point">
+          </label>
+          <p class="action-label">Time limit</p>
+          <div id="setup-times" class="choice-row"></div>
+          <p class="action-label">City size</p>
+          <div id="setup-sizes" class="choice-grid"></div>
+          <label class="settings-toggle">
+            <input type="checkbox" id="setup-ai" checked>
+            <span>Let AI pick a layout mix (still generated on this device)</span>
+          </label>
+          <p id="setup-message" class="auth-message"></p>
+          <button type="submit" class="action-btn" id="setup-start">Start drill</button>
+        </form>
+      </div>
+    </div>
+
     <!-- End screen -->
     <div id="end-screen" class="modal-overlay" style="display: none;">
       <div class="modal-panel end-panel">
@@ -54,6 +79,7 @@
           <div><span>Injured</span><strong id="end-injured">0</strong></div>
           <div><span>Disaster cost</span><strong id="end-disaster-cost">$0</strong></div>
           <div><span>Harm index <small>(0–100, higher = worse)</small></span><strong id="end-disaster-index">0</strong></div>
+          <div><span>Buildings destroyed</span><strong id="end-destroyed">0 / 0</strong></div>
         </div>
         <h3>Disaster log</h3>
         <ul id="end-disaster-log" class="disaster-log-list reflection-list"></ul>
@@ -76,6 +102,7 @@
           <div class="app-brand">
             <span class="app-title">Classroom SimCity</span>
             <span id="city-name" class="city-name">My City</span>
+            <span id="mayor-name" class="mayor-name"></span>
           </div>
           <div class="header-metrics">
             <span id="budget-counter" class="metric-pill">$5000</span>
@@ -108,6 +135,7 @@
           <span>Zones <strong id="stat-zones-mobile">0</strong></span>
           <span>Power <strong id="stat-power-mobile">0/0</strong></span>
           <span>Safe <strong id="stat-resilience-mobile">100%</strong></span>
+          <span>Left <strong id="stat-buildings-mobile">0/0</strong></span>
           <span class="disaster-stat-mobile">☠ <strong id="stat-casualties-mobile">0</strong></span>
           <span class="disaster-stat-mobile">🩹 <strong id="stat-injured-mobile">0</strong></span>
           <span class="disaster-stat-mobile">$ <strong id="stat-disaster-cost-mobile">0</strong></span>
@@ -121,6 +149,9 @@
         <div class="stat-row"><span>Zones</span><span id="stat-zones">0</span></div>
         <div class="stat-row"><span>Power</span><span id="stat-power">0/0 kW</span></div>
         <div class="stat-row"><span>Resilience</span><span id="stat-resilience">100%</span></div>
+        <div class="stat-row" title="Buildings still standing versus how many the drill started with.">
+          <span>Buildings left</span><span id="stat-buildings">0/0</span>
+        </div>
         <div class="stat-row"><span>Casualties</span><span id="stat-casualties">0</span></div>
         <div class="stat-row"><span>Injured</span><span id="stat-injured">0</span></div>
         <div class="stat-row"><span>Disaster cost</span><span id="stat-disaster-cost">$0</span></div>

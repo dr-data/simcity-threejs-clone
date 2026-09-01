@@ -339,7 +339,6 @@
           <div class="action-btn-row">
             <button type="button" class="action-btn small" onclick="ui.onExportCity()">Export</button>
             <button type="button" class="action-btn small" onclick="ui.onImportCity()">Import</button>
-            <button type="button" class="action-btn small" onclick="ui.onResetCity()">Reset</button>
             <button type="button" class="action-btn small" onclick="window.cheatConsole?.toggle()">Console</button>
           </div>
           <label class="action-label">Disaster log</label>
@@ -402,7 +401,10 @@
           <div class="action-btn-row">
             <button type="button" class="action-btn small" onclick="ui.onExportCity()">Export city file</button>
             <button type="button" class="action-btn small" onclick="ui.onImportCity()">Import file</button>
-            <button type="button" class="action-btn small" onclick="ui.onResetCity()">Reset</button>
+          </div>
+          <p class="settings-hint">Reset wipes the current map. This cannot be undone.</p>
+          <div class="action-btn-row">
+            <button type="button" class="action-btn small danger" onclick="ui.onResetCity()">Reset city</button>
           </div>
           <div class="action-btn-row">
             <button type="button" class="action-btn small" onclick="ui.onIssueRestoreCode()">Issue restore slip</button>

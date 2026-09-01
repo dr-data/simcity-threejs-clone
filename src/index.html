@@ -109,10 +109,10 @@
             <span id="budget-counter" class="metric-pill">$5000</span>
             <span id="sim-time" class="metric-pill desktop-only-inline">9/1/2026</span>
             <span id="stat-time-header" class="metric-pill session-timer">15:00</span>
-            <span class="metric-pill header-pop">
+            <button type="button" class="metric-pill header-pop" id="population-btn" onclick="ui.toggleCitizenStats()" aria-expanded="false" aria-controls="mobile-stats-strip" title="City stats">
               <img id="population-icon" src="/icons/person.png" alt="">
               <span id="population-counter">0</span>
-            </span>
+            </button>
           </div>
           <nav class="header-nav desktop-only-inline">
             <a href="/login.html" id="nav-login">Login</a>
@@ -131,19 +131,37 @@
             </button>
           </div>
         </div>
-        <div id="mobile-stats-strip" class="mobile-only mobile-stats collapsed" aria-hidden="true">
-          <span><img src="/icons/person.png" alt="" class="mini-stat-icon"> <span id="stat-residents-mobile">0</span></span>
-          <span>Zones <strong id="stat-zones-mobile">0</strong></span>
-          <span>Power <strong id="stat-power-mobile">0/0</strong></span>
-          <span>Safe <strong id="stat-resilience-mobile">100%</strong></span>
-          <span>Left <strong id="stat-buildings-mobile">0/0</strong></span>
-          <span class="disaster-stat-mobile">☠ <strong id="stat-casualties-mobile">0</strong></span>
-          <span class="disaster-stat-mobile">🩹 <strong id="stat-injured-mobile">0</strong></span>
-          <span class="disaster-stat-mobile">$ <strong id="stat-disaster-cost-mobile">0</strong></span>
-        </div>
+        <section id="mobile-stats-strip" class="mobile-only mobile-stats collapsed" aria-hidden="true">
+          <div class="mobile-stats-head">City stats</div>
+          <div class="mobile-stats-grid">
+            <div class="stat-row"><span>Residents</span><span id="stat-residents-mobile">0</span></div>
+            <div class="stat-row"><span>Zones</span><span id="stat-zones-mobile">0</span></div>
+            <div class="stat-row"><span>Power</span><span id="stat-power-mobile">0/0</span></div>
+            <div class="stat-row"><span>Resilience</span><span id="stat-resilience-mobile">100%</span></div>
+            <div class="stat-row"><span>Buildings left</span><span id="stat-buildings-mobile">0/0</span></div>
+            <div class="stat-row"><span>Score</span><span id="stat-score-mobile">0</span></div>
+            <div class="stat-row"><span>Casualties</span><span id="stat-casualties-mobile">0</span></div>
+            <div class="stat-row"><span>Injured</span><span id="stat-injured-mobile">0</span></div>
+            <div class="stat-row"><span>Disaster cost</span><span id="stat-disaster-cost-mobile">0</span></div>
+            <div class="stat-row"><span>Harm index</span><span id="stat-disaster-index-mobile">0</span></div>
+            <div class="stat-row"><span>Time</span><span id="stat-time-mobile">15:00</span></div>
+          </div>
+          <div class="disaster-log">
+            <div class="disaster-log-title">Disaster log</div>
+            <ul class="disaster-log-list"></ul>
+          </div>
+        </section>
       </header>
 
       <div id="tool-hint-bar" class="tool-hint-bar" aria-live="polite"></div>
+
+      <div id="mobile-cam-bar" class="mobile-only" aria-label="Camera view">
+        <button type="button" class="view-btn" onclick="ui.onCameraView('top')">Top</button>
+        <button type="button" class="view-btn" onclick="ui.onCameraView('isometric')">Iso</button>
+        <button type="button" class="view-btn" onclick="ui.onCameraView('street')">Street</button>
+        <button type="button" class="view-btn" onclick="ui.onCameraView('orbit')">Orbit</button>
+        <span class="cam-hint">Drag to look · pinch zoom · two fingers pan</span>
+      </div>
 
       <div id="stats-panel" class="container desktop-only hide-on-mobile" aria-hidden="true">
         <div class="stat-row"><span>Residents</span><span id="stat-residents">0</span></div>
@@ -334,9 +352,9 @@
       <div id="instructions" class="help-hint">
         <strong>Controls</strong><br>
         Build — Left click / Tap<br>
-        Rotate — Right drag / Touch drag<br>
-        Pan — Ctrl + right drag<br>
-        Zoom — Scroll
+        Look around — Right drag / one-finger drag<br>
+        Pan — Ctrl + right drag / two-finger drag<br>
+        Zoom — Scroll / pinch
       </div>
 
       <div id="version">Classroom SimCity v1.2</div>

@@ -6,6 +6,8 @@
 html, body {
   height: 100%;
   margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
   font-family: Bebas-Regular, 'Segoe UI', system-ui, sans-serif;
   font-size: 18px;
   line-height: 1.45;
@@ -40,6 +42,7 @@ h1 {
 #ui > #stats-panel,
 #ui > #info-panel,
 #ui > #mobile-tab-bar,
+#ui > #mobile-cam-bar,
 #ui > .slide-panel,
 #ui > #game-controls,
 #ui > #bottom-right-dock,
@@ -89,6 +92,15 @@ h1 {
 #render-target {
   position: relative;
   height: 100%;
+  touch-action: none;
+  overflow: hidden;
+}
+
+#render-target canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
 }
 
 #instructions {
@@ -504,6 +516,14 @@ h1 {
   display: flex;
   align-items: center;
   gap: 4px;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  pointer-events: auto;
+}
+
+button.header-pop[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .header-nav {
@@ -572,10 +592,37 @@ h1 {
   display: none;
   flex-wrap: wrap;
   gap: 4px 10px;
-  padding: 3px 10px 5px;
-  font-size: 0.72rem;
+  padding: 8px 12px 10px;
+  font-size: 0.78rem;
   color: #b8c8e0;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(16, 24, 40, 0.94);
+  max-height: min(52vh, 420px);
+  overflow-y: auto;
+}
+
+.mobile-stats-head {
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  color: #9ec5e8;
+  margin-bottom: 6px;
+}
+
+.mobile-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 12px;
+}
+
+.mobile-stats .stat-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.mobile-stats .disaster-log {
+  margin-top: 8px;
 }
 
 .mobile-stats strong {
@@ -1268,6 +1315,34 @@ a {
   box-sizing: border-box;
 }
 
+#mobile-cam-bar {
+  display: none;
+  position: fixed;
+  left: 6px;
+  right: 6px;
+  bottom: calc(58px + env(safe-area-inset-bottom));
+  z-index: 94;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 4px 6px;
+  border-radius: 10px;
+  background: rgba(12, 16, 28, 0.78);
+  pointer-events: auto;
+}
+
+#mobile-cam-bar .view-btn {
+  padding: 6px 8px;
+  font-size: 0.75rem;
+}
+
+#mobile-cam-bar .cam-hint {
+  flex: 1 1 100%;
+  font-size: 0.68rem;
+  color: #b8c8e0;
+  letter-spacing: 0.02em;
+}
+
 .mobile-tab {
   background: rgba(40, 48, 68, 0.9);
   color: #e8eef8;
@@ -1368,11 +1443,19 @@ a {
   }
 
   .mobile-stats.mobile-only {
-    display: none !important;
+    display: none;
+  }
+
+  .mobile-stats.mobile-only:not(.collapsed) {
+    display: block;
   }
 
   .mobile-stats.collapsed {
-    display: none !important;
+    display: none;
+  }
+
+  #mobile-cam-bar {
+    display: flex;
   }
 
   #instructions, #version {
@@ -1390,7 +1473,7 @@ a {
 
   .tool-hint-bar {
     top: auto;
-    bottom: calc(52px + env(safe-area-inset-bottom));
+    bottom: calc(96px + env(safe-area-inset-bottom));
     border-bottom: none;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px 8px 0 0;
@@ -1402,7 +1485,9 @@ a {
 
   .inspector-panel.open ~ .tool-hint-bar,
   body.inspector-open .tool-hint-bar,
-  body.panel-open .tool-hint-bar {
+  body.panel-open .tool-hint-bar,
+  body.inspector-open #mobile-cam-bar,
+  body.panel-open #mobile-cam-bar {
     display: none;
   }
 

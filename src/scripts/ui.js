@@ -18,6 +18,7 @@ import { formatDisasterEvent } from './disaster/disasterLogFormat.js';
 import { fallbackTip } from './ai/localTip.js';
 import { CITY_SIZE_PRESETS, TIME_PRESETS_MINUTES, LAYOUT_STYLES, getSizePreset, estimateBuildingCount } from './templates/citySizes.js';
 import { generateCityLayout } from './templates/generateCity.js';
+import { bindPairedSelects, readActiveControlValue } from './ui/activeControl.js';
 
 const SIM_START_DATE = gameConfig.simStartDate || '2026-09-01';
 
@@ -126,7 +127,6 @@ export class GameUI {
       infoElement.innerHTML = '';
       infoElement.setAttribute('aria-hidden', 'true');
     }
-    document.getElementById('mobile-stats-strip')?.classList.remove('collapsed');
     document.body.classList.remove('inspector-open');
     this._syncBackdrop();
     if (window.game?.selectedObject) {
@@ -139,6 +139,7 @@ export class GameUI {
     this.toggleMorePanel(false);
     this.toggleMobileBuildSheet(false);
     this.closeInspector();
+    this.toggleCitizenStats(false);
   }
 
   togglePause() {
@@ -228,6 +229,7 @@ export class GameUI {
     set('stat-zones-mobile', stats.developedZones);
     set('stat-power-mobile', `${stats.power.capacity}/${stats.power.demand}`);
     set('stat-resilience-mobile', `${stats.disasterResilience}%`);
+    if (live) set('stat-score-mobile', live.score);
     this.updateDisasterStats();
   }
 
@@ -248,7 +250,8 @@ export class GameUI {
     set('stat-disaster-index', snap.disaster_index);
     set('stat-casualties-mobile', snap.casualties);
     set('stat-injured-mobile', snap.injured);
-    set('stat-disaster-cost-mobile', snap.disaster_cost);
+    set('stat-disaster-cost-mobile', `$${snap.disaster_cost}`);
+    set('stat-disaster-index-mobile', snap.disaster_index);
     this.renderDisasterLog();
   }
 
@@ -271,6 +274,8 @@ export class GameUI {
     const headerTimer = document.getElementById('stat-time-header');
     if (el) el.textContent = time;
     if (headerTimer) headerTimer.textContent = time;
+    const mobileTime = document.getElementById('stat-time-mobile');
+    if (mobileTime) mobileTime.textContent = time;
   }
 
   updateInfoPanel(object) {
@@ -289,7 +294,11 @@ export class GameUI {
         </div>
         <div class="inspector-body">${object.toHTML()}</div>
       `;
-      if (mobileStrip) mobileStrip.classList.add('collapsed');
+      if (mobileStrip) {
+        mobileStrip.classList.add('collapsed');
+        mobileStrip.setAttribute('aria-hidden', 'true');
+        document.getElementById('population-btn')?.setAttribute('aria-expanded', 'false');
+      }
       this.toggleMorePanel(false);
       this.toggleMobileBuildSheet(false);
     } else {
@@ -708,6 +717,32 @@ export class GameUI {
     });
   }
 
+  toggleCitizenStats(forceOpen) {
+    const strip = document.getElementById('mobile-stats-strip');
+    const btn = document.getElementById('population-btn');
+    if (!strip) return;
+    const open =
+      forceOpen === true || forceOpen === false
+        ? forceOpen
+        : strip.classList.contains('collapsed');
+    strip.classList.toggle('collapsed', !open);
+    strip.setAttribute('aria-hidden', open ? 'false' : 'true');
+    btn?.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) {
+      const infoElement = document.getElementById('info-panel');
+      if (infoElement) {
+        infoElement.classList.remove('open');
+        infoElement.innerHTML = '';
+        infoElement.setAttribute('aria-hidden', 'true');
+      }
+      document.body.classList.remove('inspector-open');
+      this.toggleMorePanel(false);
+      this.toggleMobileBuildSheet(false);
+      if (window.game?.city) this.updateStatsPanel(window.game.city);
+    }
+    this._syncBackdrop();
+  }
+
   toggleMobileBuildSheet(forceOpen) {
     const sheet = document.getElementById('mobile-build-sheet');
     if (!sheet) return;
@@ -725,13 +760,14 @@ export class GameUI {
   }
 
   onDisaster() {
-    const type =
-      document.getElementById('disaster-type-select')?.value ||
-      document.getElementById('disaster-type-select-mobile')?.value;
+    const type = readActiveControlValue(
+      'disaster-type-select',
+      'disaster-type-select-mobile'
+    );
     const level =
-      document.getElementById('disaster-level-select')?.value ||
-      document.getElementById('disaster-level-select-mobile')?.value ||
+      readActiveControlValue('disaster-level-select', 'disaster-level-select-mobile') ||
       'moderate';
+    this.toggleMorePanel(false);
     window.game?.triggerDisaster(type, level);
   }
 
@@ -755,6 +791,8 @@ export class GameUI {
         el.value = 'moderate';
       }
     });
+    bindPairedSelects('disaster-type-select', 'disaster-type-select-mobile');
+    bindPairedSelects('disaster-level-select', 'disaster-level-select-mobile');
   }
 
   async fetchAiTip() {

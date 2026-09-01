@@ -47,7 +47,10 @@ export class Game {
     this.renderer.setSize(window.ui.gameWindow.clientWidth, window.ui.gameWindow.clientHeight);
     this.renderer.setClearColor(0x000000, 0);
 
+    this.renderer.domElement.style.touchAction = 'none';
+    this.renderer.domElement.style.display = 'block';
     window.ui.gameWindow.appendChild(this.renderer.domElement);
+    this.cameraManager.attachCanvas(this.renderer.domElement);
 
     this.raycaster = new THREE.Raycaster();
 
@@ -190,7 +193,7 @@ export class Game {
     window.disasterManager?.update();
     window.disasterManager?.applyShake(this.cameraManager.camera);
 
-    if (this.inputManager.isLeftMouseDown) {
+    if (this.inputManager.isLeftMouseDown && !this.cameraManager.isGesturing) {
       this.useTool();
     }
 

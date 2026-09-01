@@ -1,18 +1,20 @@
-import * as THREE from 'three';
 import { BuildingType } from '../sim/buildings/buildingType.js';
 import { DevelopmentState } from '../sim/buildings/modules/development.js';
 import { isPowerPlant } from '../sim/buildings/power/powerPlantTypes.js';
 import { DISASTER_LEVELS, TYPHOON_BASE_SPEED } from './disasterConfig.js';
 import { DisasterZoneVisuals } from './disasterZoneVisuals.js';
+import {
+  LEVEL_SCALE,
+  FIRE_DAMAGE_INTENSITY,
+  FLOOD_DAMAGE_INTENSITY,
+  fireStartIntensity,
+  fireDecayPerSpread,
+  fireSpreadChance,
+  floodMaxDepth,
+  shouldHitHazard,
+} from './disasterImpact.js';
 
 const RCI = [BuildingType.residential, BuildingType.commercial, BuildingType.industrial];
-
-const LEVEL_SCALE = {
-  minor: 1,
-  moderate: 1.4,
-  major: 1.8,
-  catastrophic: 2.4,
-};
 
 /**
  * Area-based disasters: floods, spreading fires, typhoon paths, radiation zones.
@@ -68,19 +70,25 @@ export class DisasterAreaSim {
     }
     const origin = waterfront[Math.floor(Math.random() * waterfront.length)];
     const scale = LEVEL_SCALE[level] || 1.4;
-    const maxDepth = Math.min(5, Math.ceil(2 * scale));
+    const maxDepth = floodMaxDepth(level, city.size);
     const affected = this.#expandFrom(origin.x, origin.y, maxDepth, (x, y) => {
       const t = city.getTile(x, y);
       return t && t.terrain !== 'water';
     });
 
-    const riseMs = 6000 * scale;
-    const holdMs = 10000 * scale;
-    const fallMs = 8000 * scale;
+    const riseMs = 4000 * scale;
+    const holdMs = 8000 * scale;
+    const fallMs = 5000 * scale;
 
     const cells = new Map();
     for (const { x, y } of affected) {
-      cells.set(city.tileKey(x, y), { x, y, intensity: 0, peak: 0.55 + Math.random() * 0.35 });
+      cells.set(city.tileKey(x, y), {
+        x,
+        y,
+        intensity: 0,
+        peak: 0.72 + Math.random() * 0.28,
+        hit: false,
+      });
     }
 
     this.floods.push({
@@ -131,15 +139,19 @@ export class DisasterAreaSim {
     cells.set(city.tileKey(tile.x, tile.y), {
       x: tile.x,
       y: tile.y,
-      intensity: 0.55 + Math.random() * 0.25,
+      intensity: fireStartIntensity(level),
+      hit: false,
     });
 
     this.fires.push({
       level,
       cells,
       lastSpread: performance.now(),
-      spreadInterval: 900 / (LEVEL_SCALE[level] || 1),
+      spreadInterval: 700 / (LEVEL_SCALE[level] || 1),
     });
+    this.#damageTileBuilding(tile, 'fire', level, false);
+    const originCell = cells.get(city.tileKey(tile.x, tile.y));
+    if (originCell) originCell.hit = true;
     return true;
   }
 
@@ -187,7 +199,7 @@ export class DisasterAreaSim {
       path,
       progress: 0,
       speed: TYPHOON_BASE_SPEED * scale,
-      radius: Math.min(2, Math.ceil(scale)),
+      radius: Math.min(3, Math.max(1, Math.ceil(1 + scale * 0.7))),
       hit: new Set(),
     });
     return true;
@@ -284,13 +296,17 @@ export class DisasterAreaSim {
         for (const cell of flood.cells.values()) {
           cell.intensity = cell.peak * t;
           this.#setTileHazard(cell.x, cell.y, cell.intensity, 'flood');
-          if (cell.intensity > 0.75) this.#tryFloodDamage(cell.x, cell.y, flood.level);
+          this.#maybeFloodDamage(cell, flood.level);
         }
         if (t >= 1) {
           flood.phase = 'hold';
           flood.phaseStart = now;
         }
       } else if (flood.phase === 'hold') {
+        for (const cell of flood.cells.values()) {
+          this.#setTileHazard(cell.x, cell.y, cell.intensity, 'flood');
+          this.#maybeFloodDamage(cell, flood.level);
+        }
         if (elapsed >= flood.holdMs) {
           flood.phase = 'fall';
           flood.phaseStart = now;
@@ -321,11 +337,12 @@ export class DisasterAreaSim {
         const toSpread = [];
 
         for (const cell of fire.cells.values()) {
-          if (cell.intensity >= 0.85) {
+          if (shouldHitHazard(cell.intensity, FIRE_DAMAGE_INTENSITY, cell.hit)) {
             this.#damageTileBuilding(city.getTile(cell.x, cell.y), 'fire', fire.level, false);
+            cell.hit = true;
           }
           const stations = city.countFireStationsNear(cell.x, cell.y);
-          const decay = 0.02 + stations * 0.04;
+          const decay = fireDecayPerSpread(stations);
           cell.intensity = Math.max(0, cell.intensity - decay);
 
           if (cell.intensity < 0.08) continue;
@@ -337,9 +354,13 @@ export class DisasterAreaSim {
             if (fire.cells.has(key)) continue;
             if (!n.building) continue;
             if (!this.#isBurnable(n.building)) continue;
-            const spreadChance = 0.22 / (1 + stations * 0.5);
-            if (Math.random() < spreadChance) {
-              toSpread.push({ x: n.x, y: n.y, intensity: cell.intensity * 0.65 });
+            if (Math.random() < fireSpreadChance(stations)) {
+              toSpread.push({
+                x: n.x,
+                y: n.y,
+                intensity: Math.max(FIRE_DAMAGE_INTENSITY + 0.1, cell.intensity * 0.85),
+                hit: false,
+              });
             }
           }
         }
@@ -431,14 +452,25 @@ export class DisasterAreaSim {
     }
   }
 
+  #maybeFloodDamage(cell, level) {
+    if (!shouldHitHazard(cell.intensity, FLOOD_DAMAGE_INTENSITY, cell.hit)) return;
+    cell.hit = true;
+    this.#tryFloodDamage(cell.x, cell.y, level);
+  }
+
   #tryFloodDamage(x, y, level) {
     const tile = this.game.city.getTile(x, y);
     if (!tile?.building) return;
     const b = tile.building;
-    if (RCI.includes(b.type) && b.development?.state !== DevelopmentState.damaged) {
-      if (Math.random() < 0.15) {
-        this.animations.animateDamage(b, 'flood', level, DISASTER_LEVELS[level]?.repairTicks ?? 5, () => {});
+    if (b.type === BuildingType.road) {
+      if (Math.random() < 0.2) {
+        window.disasterManager?.consequences?.recordRoadDestroyed();
+        this.game.city.bulldoze(x, y);
       }
+      return;
+    }
+    if (RCI.includes(b.type) && b.development?.state !== DevelopmentState.damaged) {
+      this.animations.animateDamage(b, 'flood', level, DISASTER_LEVELS[level]?.repairTicks ?? 30, () => {});
     }
   }
 

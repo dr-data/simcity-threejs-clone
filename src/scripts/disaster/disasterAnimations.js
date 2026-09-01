@@ -159,12 +159,19 @@ export class DisasterAnimationManager {
   }
 
   animateDamage(zone, type, level, repairTicks, onDamaged) {
-    const mesh = zone.mesh;
-    if (!mesh) {
-      this.#applyDamage(zone, type, level, repairTicks);
+    if (!zone?.development) {
       onDamaged?.();
       return;
     }
+    if (zone.development.state === DevelopmentState.damaged) {
+      return;
+    }
+
+    this.#applyDamage(zone, type, level, repairTicks);
+    onDamaged?.();
+
+    const mesh = zone.mesh;
+    if (!mesh) return;
 
     const meta = DISASTER_TYPES[type] || DISASTER_TYPES.fire;
     const duration =
@@ -208,8 +215,6 @@ export class DisasterAnimationManager {
           zone.development.damageSink = targetSink;
           zone.development.damageScaleMul = targetScale;
           this.#removeBurst(burst);
-          this.#applyDamage(zone, type, level, repairTicks);
-          onDamaged?.();
           return false;
         }
         return true;
@@ -226,6 +231,7 @@ export class DisasterAnimationManager {
 
   #applyDamage(zone, type, level, repairTicks) {
     if (!zone.development) return;
+    if (zone.development.state === DevelopmentState.damaged) return;
     window.disasterManager?.recordBuildingDamage(zone, type, level);
     zone.development.damageType = type;
     zone.development.damageLevel = level;

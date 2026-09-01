@@ -20,6 +20,11 @@ export function applyGeneratedLayout(city, buildings) {
       building.residents.seedOccupants();
     }
   }
+  for (let x = 0; x < city.size; x++) {
+    for (let y = 0; y < city.size; y++) {
+      city.getTile(x, y)?.building?.residents?.seedOccupants?.();
+    }
+  }
   city.services.forEach((service) => service.simulate(city));
   return buildings?.length ?? 0;
 }

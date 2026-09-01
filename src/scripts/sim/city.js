@@ -239,7 +239,10 @@ export class City extends THREE.Group {
     let n = 0;
     for (let x = 0; x < this.size; x++) {
       for (let y = 0; y < this.size; y++) {
-        if (this.getTile(x, y)?.building) n++;
+        const b = this.getTile(x, y)?.building;
+        if (!b) continue;
+        if (b.development?.state === DevelopmentState.damaged) continue;
+        n++;
       }
     }
     return n;

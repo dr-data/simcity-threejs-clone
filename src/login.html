@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Classroom SimCity</title>
+  <link rel="stylesheet" href="/main.css">
+</head>
+<body class="page-body">
+  <div class="page-container">
+    <h1>Classroom SimCity</h1>
+    <p class="subtitle">Log in with your HSU ID. Do not use a classmate’s ID. Scores stay on that ID, and the teacher can see last login. Teachers: use admin.</p>
+
+    <form id="form-login" class="auth-form">
+      <label>HSU ID <small>(s123456)</small>
+        <input type="text" id="login-username" required autocomplete="username" placeholder="s123456">
+      </label>
+      <label>Personal lock <small>(only you should know this)</small>
+        <input type="password" id="login-password" required minlength="6" autocomplete="current-password">
+      </label>
+      <button type="submit" class="action-btn">Log In</button>
+    </form>
+
+    <h2>First time this semester?</h2>
+    <p class="settings-hint">Claim your ID once with the board code the teacher writes in class. After that, only your personal lock works — classmates cannot guess a city from a short code, and they cannot log in as you without your lock.</p>
+    <form id="form-claim" class="auth-form">
+      <label>HSU ID
+        <input type="text" id="claim-username" required placeholder="s123456" pattern="[sS][0-9]{6,8}">
+      </label>
+      <label>Today’s board code
+        <input type="text" id="claim-board" required placeholder="From the teacher">
+      </label>
+      <label>Create a personal lock (6+ characters)
+        <input type="password" id="claim-lock" required minlength="6" autocomplete="new-password">
+      </label>
+      <label>Confirm lock
+        <input type="password" id="claim-lock2" required minlength="6" autocomplete="new-password">
+      </label>
+      <button type="submit" class="action-btn">Claim my HSU ID</button>
+    </form>
+
+    <p class="settings-hint">Forgot your lock? Ask the teacher to reset it in Admin. There is no email reset.</p>
+    <p id="auth-message" class="auth-message"></p>
+    <p><a href="/">← Back to Game</a></p>
+  </div>
+  <script type="module" src="./scripts/pages/login.js"></script>
+</body>
+</html>

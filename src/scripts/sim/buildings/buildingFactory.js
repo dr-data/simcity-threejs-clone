@@ -6,6 +6,7 @@ import { Road } from './transportation/road.js';
 import { Building } from './building.js';
 import { PowerPlant } from './power/powerPlant.js';
 import { PowerLine } from './power/powerLine.js';
+import { FireStation } from './services/fireStation.js';
 
 /**
  * Creates a new building object
@@ -25,7 +26,13 @@ export function createBuilding(x, y, type) {
     case BuildingType.road: 
       return new Road();
     case BuildingType.powerPlant:
-      return new PowerPlant();
+      return new PowerPlant(0, 0, 'legacy');
+    case BuildingType.powerPlantPetroleum:
+      return new PowerPlant(0, 0, 'petroleum');
+    case BuildingType.powerPlantNuclear:
+      return new PowerPlant(0, 0, 'nuclear');
+    case BuildingType.fireStation:
+      return new FireStation();
     case BuildingType.powerLine:
       return new PowerLine();
     default:

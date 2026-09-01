@@ -4,73 +4,136 @@ import { CameraManager } from './camera.js';
 import { InputManager } from './input.js';
 import { City } from './sim/city.js';
 import { SimObject } from './sim/simObject.js';
+import gameConfig from './gameConfig.js';
+import { SessionManager } from './session/sessionManager.js';
+import { DISASTER_LEVELS, DISASTER_TYPES } from './disaster/disasterConfig.js';
+import { DisasterManager } from './disaster/disasterManager.js';
+import { CheatConsole } from './cheat/cheatConsole.js';
+import { SaveLoadManager } from './save/saveLoadManager.js';
+import { BudgetManager } from './budget/budgetManager.js';
+import { applyTemplate } from './templates/cityTemplates.js';
+import { applyGeneratedLayout } from './templates/applyCityLayout.js';
+import { authClient } from './auth/authClient.js';
+import { simIntervalMs } from './sim/simSpeed.js';
 
-/** 
- * Manager for the Three.js scene. Handles rendering of a `City` object
+/**
+ * Manager for the Three.js scene. Handles rendering of a `City` object.
  */
 export class Game {
-  /**
-   * @type {City}
-   */
-  city;
-  /**
-   * Object that currently hs focus
-   * @type {SimObject | null}
-   */
   focusedObject = null;
-  /**
-   * Class for managing user input
-   * @type {InputManager}
-   */
-  inputManager;
-  /**
-   * Object that is currently selected
-   * @type {SimObject | null}
-   */
   selectedObject = null;
+  simSpeed = 1;
+  _simTimer = null;
+  awaitingSetup = true;
 
-  constructor(city) {
-    this.city = city;
-
-    this.renderer = new THREE.WebGLRenderer({ 
-      antialias: true
+  constructor() {
+    window.gameConfig = gameConfig;
+    this.renderer = new THREE.WebGLRenderer({
+      antialias: true,
     });
     this.scene = new THREE.Scene();
 
     this.inputManager = new InputManager(window.ui.gameWindow);
     this.cameraManager = new CameraManager(window.ui.gameWindow);
 
-    // Configure the renderer
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    if (isMobile) {
+      this.renderer.shadowMap.enabled = false;
+    } else {
+      this.renderer.shadowMap.enabled = true;
+      this.renderer.shadowMap.type = THREE.PCFShadowMap;
+    }
+
     this.renderer.setSize(window.ui.gameWindow.clientWidth, window.ui.gameWindow.clientHeight);
     this.renderer.setClearColor(0x000000, 0);
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFShadowMap;
 
-    // Add the renderer to the DOM
+    this.renderer.domElement.style.touchAction = 'none';
+    this.renderer.domElement.style.display = 'block';
     window.ui.gameWindow.appendChild(this.renderer.domElement);
+    this.cameraManager.attachCanvas(this.renderer.domElement);
 
-    // Variables for object selection
     this.raycaster = new THREE.Raycaster();
 
-    /**
-     * Global instance of the asset manager
-     */
+    window.budgetManager = new BudgetManager();
     window.assetManager = new AssetManager(() => {
       window.ui.hideLoadingText();
-
       this.city = new City(16);
       this.initialize(this.city);
+      this._setupManagers();
+      window.disasterManager?.animations?.setScene(this.scene);
       this.start();
-
-      setInterval(this.simulate.bind(this), 1000);
+      this._startSimClock();
+      this._initSession();
     });
 
     window.addEventListener('resize', this.onResize.bind(this), false);
   }
 
-  /**
-   * Initalizes the scene, clearing all existing assets
-   */
+  _setupManagers() {
+    window.disasterManager = new DisasterManager(this);
+    window.saveLoadManager = new SaveLoadManager(this);
+    window.cheatConsole = new CheatConsole(this);
+
+    window.sessionManager = new SessionManager(
+      (time) => window.ui.updateTimeRemaining(time),
+      (m) => window.ui.showMilestone(m),
+      (stats) => window.ui.showEndScreen(stats)
+    );
+    window.sessionManager.durationMs = gameConfig.sessionLengthMinutes * 60 * 1000;
+  }
+
+  _startSimClock() {
+    if (this._simTimer) clearInterval(this._simTimer);
+    this._simTimer = setInterval(this.simulate.bind(this), simIntervalMs(this.simSpeed));
+  }
+
+  setSimSpeed(speed) {
+    const next = Number(speed);
+    if (![1, 2, 5].includes(next)) return;
+    this.simSpeed = next;
+    this._startSimClock();
+    window.ui?.syncSimSpeedButtons?.(next);
+  }
+
+  async _initSession() {
+    try {
+      const { user } = await authClient.me();
+      window.ui.setUser(user);
+    } catch {
+      window.ui.setUser(null);
+    }
+
+    window.budgetManager.budget = gameConfig.startingBudget;
+    this.awaitingSetup = true;
+    window.ui.showSessionSetup();
+  }
+
+  beginDrill({ size, cityName, mayorName, minutes, buildings, budget }) {
+    const n = Number(size) || 16;
+    this.city = new City(n, cityName || 'My City');
+    this.initialize(this.city);
+    window.disasterManager?.animations?.setScene(this.scene);
+    if (buildings?.length) {
+      applyGeneratedLayout(this.city, buildings);
+    }
+    if (window.budgetManager) {
+      window.budgetManager.budget = budget ?? gameConfig.startingBudget;
+    }
+    this.cameraManager?.fitToCity(n);
+    this.awaitingSetup = false;
+    window.sessionManager.durationMs = Math.max(1, Number(minutes) || 15) * 60 * 1000;
+    window.ui.setMayorName(mayorName);
+    window.disasterManager.onSessionStart(this.city);
+    const extra = Math.max(0, Math.round((n - 12) / 4));
+    window.disasterManager.configure(1 + extra, 3 + extra, 0.3);
+    window.sessionManager.start();
+    window.ui.updateTitleBar(this);
+    window.ui.updateStatsPanel(this.city);
+    if (gameConfig.showTutorial) {
+      window.ui.maybeShowTutorialWelcome();
+    }
+  }
+
   initialize(city) {
     this.scene.clear();
     this.scene.add(city);
@@ -79,89 +142,80 @@ export class Game {
   }
 
   #setupGrid(city) {
-    // Add the grid
-    const gridMaterial = new THREE.MeshBasicMaterial({ 
+    const gridMaterial = new THREE.MeshBasicMaterial({
       color: 0x000000,
       map: window.assetManager.textures['grid'],
       transparent: true,
-      opacity: 0.2
+      opacity: 0.2,
     });
     gridMaterial.map.repeat = new THREE.Vector2(city.size, city.size);
     gridMaterial.map.wrapS = city.size;
     gridMaterial.map.wrapT = city.size;
 
-    const grid = new THREE.Mesh(
-      new THREE.BoxGeometry(city.size, 0.1, city.size),
-      gridMaterial
-    );
+    const grid = new THREE.Mesh(new THREE.BoxGeometry(city.size, 0.1, city.size), gridMaterial);
     grid.position.set(city.size / 2 - 0.5, -0.04, city.size / 2 - 0.5);
     this.scene.add(grid);
   }
 
-  /**
-   * Setup the lights for the scene
-   */
   #setupLights() {
-    const sun = new THREE.DirectionalLight(0xffffff, 2)
+    const sun = new THREE.DirectionalLight(0xffffff, 2);
     sun.position.set(-10, 20, 0);
-    sun.castShadow = true;
-    sun.shadow.camera.left = -20;
-    sun.shadow.camera.right = 20;
-    sun.shadow.camera.top = 20;
-    sun.shadow.camera.bottom = -20;
-    sun.shadow.mapSize.width = 2048;
-    sun.shadow.mapSize.height = 2048;
-    sun.shadow.camera.near = 10;
-    sun.shadow.camera.far = 50;
-    sun.shadow.normalBias = 0.01;
+    sun.castShadow = this.renderer.shadowMap.enabled;
+    if (sun.castShadow) {
+      const span = Math.max(20, (this.city?.size || 16) * 1.2);
+      sun.shadow.camera.left = -span;
+      sun.shadow.camera.right = span;
+      sun.shadow.camera.top = span;
+      sun.shadow.camera.bottom = -span;
+      sun.shadow.mapSize.width = 1024;
+      sun.shadow.mapSize.height = 1024;
+      sun.shadow.camera.near = 10;
+      sun.shadow.camera.far = 50;
+      sun.shadow.normalBias = 0.01;
+    }
     this.scene.add(sun);
     this.scene.add(new THREE.AmbientLight(0xffffff, 0.5));
   }
-  
-  /**
-   * Starts the renderer
-   */
+
   start() {
     this.renderer.setAnimationLoop(this.draw.bind(this));
   }
 
-  /**
-   * Stops the renderer
-   */
   stop() {
     this.renderer.setAnimationLoop(null);
   }
 
-  /**
-   * Render the contents of the scene
-   */
   draw() {
     this.city.draw();
     this.updateFocusedObject();
+    this.cameraManager.updateTransition();
+    this.cameraManager.updateOrbit();
+    window.disasterManager?.update();
+    window.disasterManager?.applyShake(this.cameraManager.camera);
 
-    if (this.inputManager.isLeftMouseDown) {
+    if (this.inputManager.isLeftMouseDown && !this.cameraManager.isGesturing) {
       this.useTool();
     }
 
     this.renderer.render(this.scene, this.cameraManager.camera);
   }
 
-  /**
-   * Moves the simulation forward by one step
-   */
   simulate() {
-    if (window.ui.isPaused) return;
+    if (this.awaitingSetup || window.ui.isPaused || window.sessionManager?.isEnded) return;
 
-    // Update the city data model first, then update the scene
     this.city.simulate(1);
-
     window.ui.updateTitleBar(this);
     window.ui.updateInfoPanel(this.selectedObject);
+    window.ui.updateStatsPanel(this.city);
+
+    const stats = this.city.getSessionStats();
+    window.sessionManager?.checkMilestones(stats);
+
+    if (window.sessionManager?.getTimeRemainingMs() <= 0) {
+      window.sessionManager.endSession(stats);
+    }
   }
 
-  /**
-   * Uses the currently active tool
-   */
   useTool() {
     switch (window.ui.activeToolId) {
       case 'select':
@@ -171,31 +225,44 @@ export class Game {
       case 'bulldoze':
         if (this.focusedObject) {
           const { x, y } = this.focusedObject;
-          this.city.bulldoze(x, y);
+          const tile = this.city.getTile(x, y);
+          if (tile?.building) {
+            window.budgetManager.refund(tile.building.type);
+            this.city.bulldoze(x, y);
+            window.ui.updateTitleBar(this);
+          }
         }
         break;
       default:
         if (this.focusedObject) {
           const { x, y } = this.focusedObject;
-          this.city.placeBuilding(x, y, window.ui.activeToolId);
+          const type = window.ui.activeToolId;
+          if (!window.budgetManager.canAfford(type)) {
+            window.ui.showToast('Insufficient budget!');
+            return;
+          }
+          const tile = this.city.getTile(x, y);
+          if (tile && !tile.building) {
+            if (tile.terrain === 'water') {
+              window.ui.showToast('Cannot build on water!');
+              return;
+            }
+            window.budgetManager.spend(type);
+            this.city.placeBuilding(x, y, type);
+            window.ui.updateTitleBar(this);
+          }
         }
         break;
     }
   }
-  
-  /**
-   * Sets the currently selected object and highlights it
-   */
+
   updateSelectedObject() {
     this.selectedObject?.setSelected(false);
     this.selectedObject = this.focusedObject;
     this.selectedObject?.setSelected(true);
   }
 
-  /**
-   * Sets the object that is currently highlighted
-   */
-  updateFocusedObject() {  
+  updateFocusedObject() {
     this.focusedObject?.setFocused(false);
     const newObject = this.#raycast();
     if (newObject !== this.focusedObject) {
@@ -204,40 +271,61 @@ export class Game {
     this.focusedObject?.setFocused(true);
   }
 
-  /**
-   * Gets the mesh currently under the the mouse cursor. If there is nothing under
-   * the the mouse cursor, returns null
-   * @param {MouseEvent} event Mouse event
-   * @returns {THREE.Mesh | null}
-   */
   #raycast() {
-    var coords = {
+    const coords = {
       x: (this.inputManager.mouse.x / this.renderer.domElement.clientWidth) * 2 - 1,
-      y: -(this.inputManager.mouse.y / this.renderer.domElement.clientHeight) * 2 + 1
+      y: -(this.inputManager.mouse.y / this.renderer.domElement.clientHeight) * 2 + 1,
     };
 
     this.raycaster.setFromCamera(coords, this.cameraManager.camera);
 
-    let intersections = this.raycaster.intersectObjects(this.city.root.children, true);
+    const intersections = this.raycaster.intersectObjects(this.city.root.children, true);
     if (intersections.length > 0) {
-      // The SimObject attached to the mesh is stored in the user data
-      const selectedObject = intersections[0].object.userData;
-      return selectedObject;
-    } else {
-      return null;
+      return intersections[0].object.userData;
     }
+    return null;
   }
 
-  /**
-   * Resizes the renderer to fit the current game window
-   */
   onResize() {
     this.cameraManager.resize(window.ui.gameWindow);
     this.renderer.setSize(window.ui.gameWindow.clientWidth, window.ui.gameWindow.clientHeight);
   }
+
+  triggerDisaster(type, level) {
+    const levelId = level || 'moderate';
+    const levelMeta = DISASTER_LEVELS[levelId] || DISASTER_LEVELS.moderate;
+    const cost = levelMeta.cost;
+
+    if (!window.ui.godMode) {
+      if (window.budgetManager.budget < cost) {
+        window.ui.showToast(`Need $${cost} budget to trigger disaster (or use GOD mode).`);
+        return;
+      }
+      window.budgetManager.budget -= cost;
+      window.disasterManager?.consequences?.addEmergencySpend(cost);
+      window.ui.updateTitleBar(this);
+    }
+
+    if (type) {
+      window.disasterManager?.triggerDisaster(type, levelId);
+    } else {
+      window.disasterManager?.triggerRandomDisaster();
+    }
+    const meta = DISASTER_TYPES[type] || DISASTER_TYPES.fire;
+    window.ui?.showToast(`${meta.emoji} ${meta.label} disaster!`);
+  }
+
+  loadTemplate(templateId) {
+    const result = applyTemplate(this.city, templateId);
+    if (result) {
+      this.initialize(this.city);
+      window.budgetManager.budget = result.budget;
+      window.ui.updateTitleBar(this);
+      window.ui.updateStatsPanel(this.city);
+    }
+  }
 }
 
-// Create a new game when the window is loaded
 window.onload = () => {
   window.game = new Game();
-}
+};

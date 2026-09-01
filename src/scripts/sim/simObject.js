@@ -47,15 +47,13 @@ export class SimObject extends THREE.Object3D {
    * @type {THREE.Mesh} value
    */
   setMesh(value) {
-    // Remove resources for existing mesh
     if (this.#mesh) {
-      this.dispose();
+      this.#disposeMesh(this.#mesh);
       this.remove(this.#mesh);
     }
 
     this.#mesh = value;
 
-    // Add to scene graph
     if (this.#mesh) {
       this.add(this.#mesh);
     }
@@ -97,11 +95,13 @@ export class SimObject extends THREE.Object3D {
   /**
    * Handles any clean up needed before an object is removed
    */
+  #disposeMesh(mesh) {
+    mesh?.traverse((obj) => {
+      obj.material?.dispose();
+    });
+  }
+
   dispose() {
-    this.#mesh.traverse((obj) => {
-      if (obj.material) {
-        obj.material?.dispose();
-      }
-    })
+    this.#disposeMesh(this.#mesh);
   }
 }

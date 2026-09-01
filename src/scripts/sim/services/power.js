@@ -1,4 +1,5 @@
 import { BuildingType } from '../buildings/buildingType.js';
+import { isPowerPlant } from '../buildings/power/powerPlantTypes.js';
 import { City } from '../city.js';
 
 export class PowerService {
@@ -13,7 +14,7 @@ export class PowerService {
         const tile = city.getTile(x, y);
         const building = city.getTile(x, y).building;
         if (building) {
-          if (building.type === BuildingType.powerPlant) {
+          if (isPowerPlant(building)) {
             const powerPlant = building;
             // Reset power consumption for each power plant
             powerPlant.powerConsumed = 0;

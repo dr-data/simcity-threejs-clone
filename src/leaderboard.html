@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leaderboard — Classroom SimCity</title>
+  <link rel="stylesheet" href="/main.css">
+</head>
+<body class="page-body">
+  <div class="page-container wide">
+    <h1>Leaderboard</h1>
+    <p class="settings-hint">Scores update during a logged-in session (bests only; session count still waits until the class timer ends). This page refreshes every 15 seconds.</p>
+    <p id="leaderboard-status" class="subtitle"></p>
+    <div class="table-wrap">
+      <table id="leaderboard-table" class="data-table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Username</th>
+            <th>Best Score</th>
+            <th>Residents</th>
+            <th>Resilience</th>
+            <th>Casualties</th>
+            <th>Injured</th>
+            <th>Disaster $</th>
+            <th>Sessions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <h2>Disaster log</h2>
+    <p id="disaster-log-status" class="subtitle"></p>
+    <div class="table-wrap">
+      <table id="disaster-log-table" class="data-table">
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Player</th>
+            <th>Type</th>
+            <th>Source</th>
+            <th>Killed</th>
+            <th>Injured</th>
+            <th>Cost</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="settings-hint">Harm index (shown in-game) is 0–100, higher = worse. It combines deaths, injuries, damaged zones, roads, and repair cost. Disasters may strike at random during a session or be triggered by the player.</p>
+    <p><a href="/">← Back to Game</a></p>
+  </div>
+  <script type="module" src="./scripts/pages/leaderboard.js"></script>
+</body>
+</html>

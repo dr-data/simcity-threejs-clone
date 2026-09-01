@@ -5,6 +5,7 @@ import { Tile } from './tile.js';
 import { VehicleGraph } from './vehicles/vehicleGraph.js';
 import { PowerService } from './services/power.js';
 import { SimService } from './services/simService.js';
+import { DevelopmentState } from './buildings/modules/development.js';
 
 export class City extends THREE.Group {
   /**
@@ -69,6 +70,79 @@ export class City extends THREE.Group {
     
     this.vehicleGraph = new VehicleGraph(this.size);
     this.debugMeshes.add(this.vehicleGraph);
+
+    this.#initWaterEdges();
+  }
+
+  #initWaterEdges() {
+    for (let x = 0; x < this.size; x++) {
+      for (let y = 0; y < this.size; y++) {
+        if (x === 0 || y === 0 || x === this.size - 1 || y === this.size - 1) {
+          const tile = this.tiles[x][y];
+          tile.terrain = 'water';
+          tile.refreshView(this);
+        }
+      }
+    }
+  }
+
+  isWater(x, y) {
+    const tile = this.getTile(x, y);
+    return tile?.terrain === 'water';
+  }
+
+  /** Land tiles adjacent to water (flood origins) */
+  getWaterfrontTiles() {
+    const tiles = [];
+    for (let x = 0; x < this.size; x++) {
+      for (let y = 0; y < this.size; y++) {
+        const tile = this.getTile(x, y);
+        if (!tile || tile.terrain === 'water') continue;
+        const neighbors = this.getTileNeighbors(x, y);
+        if (neighbors.some((n) => n?.terrain === 'water')) {
+          tiles.push(tile);
+        }
+      }
+    }
+    return tiles;
+  }
+
+  getTileNeighbors(x, y) {
+    return [
+      this.getTile(x - 1, y),
+      this.getTile(x + 1, y),
+      this.getTile(x, y - 1),
+      this.getTile(x, y + 1),
+    ];
+  }
+
+  countFireStationsNear(x, y, radius = 4) {
+    let count = 0;
+    for (let dx = -radius; dx <= radius; dx++) {
+      for (let dy = -radius; dy <= radius; dy++) {
+        if (Math.abs(dx) + Math.abs(dy) > radius) continue;
+        const b = this.getTile(x + dx, y + dy)?.building;
+        if (b?.type === BuildingType.fireStation) count++;
+      }
+    }
+    return count;
+  }
+
+  getNuclearPlants() {
+    const plants = [];
+    for (let x = 0; x < this.size; x++) {
+      for (let y = 0; y < this.size; y++) {
+        const b = this.getTile(x, y)?.building;
+        if (b?.type === BuildingType.powerPlantNuclear) {
+          plants.push({ x, y, building: b });
+        }
+      }
+    }
+    return plants;
+  }
+
+  tileKey(x, y) {
+    return `${x},${y}`;
   }
 
   /**
@@ -80,13 +154,142 @@ export class City extends THREE.Group {
     for (let x = 0; x < this.size; x++) {
       for (let y = 0; y < this.size; y++) {
         const tile = this.getTile(x, y);
-        population += tile.building?.residents?.count ?? 0;
+        const building = tile.building;
+        if (building?.development?.state === DevelopmentState.damaged) continue;
+        population += building?.residents?.count ?? 0;
       }
     }
     return population;
   }
 
-  /** Returns the title at the coordinates. If the coordinates
+  /**
+   * Count of developed (occupied) zones not damaged
+   */
+  getDevelopedZoneCount() {
+    let count = 0;
+    for (let x = 0; x < this.size; x++) {
+      for (let y = 0; y < this.size; y++) {
+        const b = this.getTile(x, y).building;
+        if (
+          b?.development &&
+          b.development.state === DevelopmentState.developed
+        ) {
+          count++;
+        }
+      }
+    }
+    return count;
+  }
+
+  /**
+   * Percentage of zones undamaged (disaster resilience score 0-100)
+   */
+  getDisasterResilience() {
+    let zones = 0;
+    let undamaged = 0;
+    for (let x = 0; x < this.size; x++) {
+      for (let y = 0; y < this.size; y++) {
+        const b = this.getTile(x, y).building;
+        if (
+          b &&
+          [BuildingType.residential, BuildingType.commercial, BuildingType.industrial].includes(
+            b.type
+          )
+        ) {
+          zones++;
+          if (b.development?.state !== DevelopmentState.damaged) {
+            undamaged++;
+          }
+        }
+      }
+    }
+    if (zones === 0) return 100;
+    return Math.round((undamaged / zones) * 100);
+  }
+
+  getPowerStats() {
+    let capacity = 0;
+    let demand = 0;
+    for (let x = 0; x < this.size; x++) {
+      for (let y = 0; y < this.size; y++) {
+        const b = this.getTile(x, y).building;
+        if (b?.type === BuildingType.powerPlant || b?.type === BuildingType.powerPlantPetroleum || b?.type === BuildingType.powerPlantNuclear) {
+          capacity += b.powerCapacity ?? 0;
+        }
+        if (b?.power?.required) {
+          demand += b.power.required;
+        }
+      }
+    }
+    return { capacity, demand };
+  }
+
+  getSessionStats() {
+    const buildings = this.countBuildings();
+    return {
+      residents: this.population,
+      developedZones: this.getDevelopedZoneCount(),
+      disasterResilience: this.getDisasterResilience(),
+      power: this.getPowerStats(),
+      buildings,
+    };
+  }
+
+  countBuildings() {
+    let n = 0;
+    for (let x = 0; x < this.size; x++) {
+      for (let y = 0; y < this.size; y++) {
+        const b = this.getTile(x, y)?.building;
+        if (!b) continue;
+        if (b.development?.state === DevelopmentState.damaged) continue;
+        n++;
+      }
+    }
+    return n;
+  }
+
+  serialize() {
+    const buildings = [];
+    for (let x = 0; x < this.size; x++) {
+      for (let y = 0; y < this.size; y++) {
+        const tile = this.getTile(x, y);
+        if (tile.building) {
+          const b = tile.building;
+          const entry = { x, y, type: b.type };
+          if (b.development) {
+            entry.state = b.development.state;
+            entry.level = b.development.level;
+            entry.repairCounter = b.development.repairCounter;
+          }
+          buildings.push(entry);
+        }
+      }
+    }
+    return { size: this.size, name: this.name, simTime: this.simTime, buildings };
+  }
+
+  deserialize(data) {
+    if (!data) return;
+    this.name = data.name || this.name;
+    this.simTime = data.simTime || 0;
+    for (let x = 0; x < this.size; x++) {
+      for (let y = 0; y < this.size; y++) {
+        this.bulldoze(x, y);
+      }
+    }
+    for (const entry of data.buildings || []) {
+      this.placeBuilding(entry.x, entry.y, entry.type);
+      const tile = this.getTile(entry.x, entry.y);
+      if (tile?.building?.development && entry.state) {
+        tile.building.development.state = entry.state;
+        if (entry.level) tile.building.development.level = entry.level;
+        if (entry.repairCounter) tile.building.development.repairCounter = entry.repairCounter;
+        tile.building.refreshView(this);
+      }
+    }
+  }
+
+  /** Returns the tile at the coordinates. If the coordinates
    * are out of bounds, then `null` is returned.
    * @param {number} x The x-coordinate of the tile
    * @param {number} y The y-coordinate of the tile
@@ -132,21 +335,19 @@ export class City extends THREE.Group {
   placeBuilding(x, y, buildingType) {
     const tile = this.getTile(x, y);
 
-    // If the tile doesnt' already have a building, place one there
-    if (tile && !tile.building) {
-      tile.setBuilding(createBuilding(x, y, buildingType));
-      tile.refreshView(this);
-      
-      // Update buildings on adjacent tile in case they need to
-      // change their mesh (e.g. roads)
-      this.getTile(x - 1, y)?.refreshView(this);
-      this.getTile(x + 1, y)?.refreshView(this);
-      this.getTile(x, y - 1)?.refreshView(this);
-      this.getTile(x, y + 1)?.refreshView(this);
+    if (!tile || tile.building) return;
+    if (tile.terrain === 'water') return;
 
-      if (tile.building.type === BuildingType.road) {
-        this.vehicleGraph.updateTile(x, y, tile.building);
-      }
+    tile.setBuilding(createBuilding(x, y, buildingType));
+    tile.refreshView(this);
+
+    this.getTile(x - 1, y)?.refreshView(this);
+    this.getTile(x + 1, y)?.refreshView(this);
+    this.getTile(x, y - 1)?.refreshView(this);
+    this.getTile(x, y + 1)?.refreshView(this);
+
+    if (tile.building.type === BuildingType.road) {
+      this.vehicleGraph.updateTile(x, y, tile.building);
     }
   }
 

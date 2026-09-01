@@ -8,6 +8,12 @@ export class Tile extends SimObject {
    * @type {string}
    */
   terrain = 'grass';
+  /** Flood / radiation intensity on this tile (0–1) */
+  hazardIntensity = 0;
+  /** Active hazard visual type: flood, fire, typhoon, nuclear */
+  hazardType = null;
+  /** Radioactive contamination — blocks development */
+  isRadioactive = false;
   /**
    * The building on this tile
    * @type {Building?}
@@ -53,6 +59,13 @@ export class Tile extends SimObject {
        * @type {THREE.Mesh}
        */
       const mesh = window.assetManager.getModel(this.terrain, this);
+      if (this.terrain === 'water') {
+        mesh.traverse((obj) => {
+          if (obj.material?.color) {
+            obj.material.color.setHex(0x1e6a9e);
+          }
+        });
+      }
       mesh.name = this.terrain;
       this.setMesh(mesh);
     }

@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Classroom SimCity</title>
   <link rel="stylesheet" href="/main.css">
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <script type="module" src="./scripts/game.js"></script>
@@ -11,80 +13,411 @@
 
 <body>
   <div id="root-window">
-    <!-- Three.js adds a `canvas` element to this element-->
     <div id="render-target"></div>
+    <div id="tutorial-root"></div>
+
+    <div id="disaster-overlay"></div>
+
     <div id="loading" class="text-overlay">
-      <div>
-        LOADING...
-      </div>
+      <div>LOADING...</div>
     </div>
     <div id="paused-text" class="text-overlay" style="visibility: hidden;">
-      <div>
-        PAUSED
+      <div>PAUSED</div>
+    </div>
+
+    <div id="disaster-message" class="banner-message"></div>
+    <div id="milestone-badge" class="banner-message milestone"></div>
+    <div id="toast" class="banner-message toast"></div>
+
+    <!-- First-time tutorial welcome (skippable) -->
+    <div id="tutorial-welcome" class="modal-overlay" style="display: none;">
+      <div class="modal-panel welcome-panel">
+        <h2>Welcome to Classroom SimCity</h2>
+        <p>Take a quick 60-second guided tour of the interface?</p>
+        <div class="end-actions">
+          <button type="button" class="action-btn" onclick="window.ui.acceptTutorialWelcome()">Start Tour</button>
+          <button type="button" class="action-btn secondary" onclick="window.ui.skipTutorialWelcome()">Skip</button>
+        </div>
       </div>
     </div>
+
+    <div id="session-setup" class="modal-overlay" style="display: none;">
+      <div class="modal-panel setup-panel">
+        <h2>Start your drill</h2>
+        <p class="settings-hint">Name yourself and your city. Each size is a finished town on a street grid. Bigger maps have more developed buildings to flatten with disasters before the clock runs out.</p>
+        <form id="session-setup-form" class="auth-form" onsubmit="ui.submitSessionSetup(event); return false;">
+          <label>Your name
+            <input type="text" id="setup-mayor" required maxlength="32" autocomplete="nickname" placeholder="Alex">
+          </label>
+          <label>City name
+            <input type="text" id="setup-city" required maxlength="40" placeholder="North Point">
+          </label>
+          <p class="action-label">Time limit</p>
+          <div id="setup-times" class="choice-row"></div>
+          <p class="action-label">City size</p>
+          <div id="setup-sizes" class="choice-grid"></div>
+          <label class="settings-toggle">
+            <input type="checkbox" id="setup-ai" checked>
+            <span>Let AI pick a layout mix (still generated on this device)</span>
+          </label>
+          <p id="setup-message" class="auth-message"></p>
+          <button type="submit" class="action-btn" id="setup-start">Start drill</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- End screen -->
+    <div id="end-screen" class="modal-overlay" style="display: none;">
+      <div class="modal-panel end-panel">
+        <h2>Session Complete!</h2>
+        <div class="end-stats">
+          <div><span>Score</span><strong id="end-score">0</strong></div>
+          <div><span>Residents</span><strong id="end-residents">0</strong></div>
+          <div><span>Developed Zones</span><strong id="end-zones">0</strong></div>
+          <div><span>Resilience</span><strong id="end-resilience">0%</strong></div>
+          <div><span>Casualties</span><strong id="end-casualties">0</strong></div>
+          <div><span>Injured</span><strong id="end-injured">0</strong></div>
+          <div><span>Disaster cost</span><strong id="end-disaster-cost">$0</strong></div>
+          <div><span>Harm index <small>(0–100, higher = worse)</small></span><strong id="end-disaster-index">0</strong></div>
+          <div><span>Buildings destroyed</span><strong id="end-destroyed">0 / 0</strong></div>
+        </div>
+        <div id="end-score-breakdown" class="score-breakdown"></div>
+        <h3>Disaster log</h3>
+        <ul id="end-disaster-log" class="disaster-log-list reflection-list"></ul>
+        <h3>Reflection</h3>
+        <ul id="reflection-prompts" class="reflection-list"></ul>
+        <p id="ai-mayor-report" class="ai-text"></p>
+        <div class="end-actions">
+          <button type="button" class="action-btn secondary" id="btn-ai-reflection" onclick="ui.fetchAiReflection()">AI Discussion Questions</button>
+          <a href="?quick=1" class="action-btn">Play Again</a>
+          <a href="/leaderboard.html" class="action-btn secondary">View Leaderboard</a>
+        </div>
+      </div>
+    </div>
+
     <div id="ui">
-      <div id="title-bar">
-        <div class="title-bar-left-items title-bar-items">
-          $1000
+      <div id="ui-backdrop" class="ui-backdrop" onclick="ui.closeAllPanels()" aria-hidden="true"></div>
+
+      <header id="game-header">
+        <div class="header-main">
+          <div class="app-brand">
+            <span class="app-title">Classroom SimCity</span>
+            <span id="city-name" class="city-name">My City</span>
+            <span id="mayor-name" class="mayor-name"></span>
+          </div>
+          <div class="header-metrics">
+            <span id="budget-counter" class="metric-pill">$5000</span>
+            <span id="sim-time" class="metric-pill desktop-only-inline">9/1/2026</span>
+            <span id="stat-time-header" class="metric-pill session-timer">15:00</span>
+            <button type="button" class="metric-pill header-pop" id="population-btn" onclick="ui.toggleCitizenStats()" aria-expanded="false" aria-controls="mobile-stats-strip" title="City stats">
+              <img id="population-icon" src="/icons/person.png" alt="">
+              <span id="population-counter">0</span>
+            </button>
+          </div>
+          <nav class="header-nav desktop-only-inline">
+            <a href="/login.html" id="nav-login">Login</a>
+            <span id="nav-user">Guest</span>
+            <a href="/leaderboard.html">Board</a>
+            <a href="/admin.html" id="nav-admin" style="display:none">Admin</a>
+            <a href="#" onclick="ui.openHelp();return false;">Help</a>
+            <button type="button" id="settings-btn" class="header-nav-btn" onclick="ui.openSettings()" title="Settings">⚙</button>
+          </nav>
+          <div class="header-actions mobile-only">
+            <button type="button" id="settings-btn-mobile" class="header-icon-btn" onclick="ui.openSettings()" title="Settings">
+              <img src="/icons/settings-color.svg" alt="" class="header-action-icon">
+            </button>
+            <button type="button" class="header-icon-btn" onclick="ui.toggleMorePanel()" title="Menu">
+              <img src="/icons/menu-color.svg" alt="" class="header-action-icon">
+            </button>
+          </div>
         </div>
-        <div class="title-bar-center-items title-bar-items">
-          <span id="city-name">My City</span>
-          <span>&nbsp;-&nbsp;</span>
-          <span id="sim-time">1/1/2023</span>
+        <section id="mobile-stats-strip" class="mobile-only mobile-stats collapsed" aria-hidden="true">
+          <div class="mobile-stats-head">City stats</div>
+          <div class="mobile-stats-grid">
+            <div class="stat-row"><span>Residents</span><span id="stat-residents-mobile">0</span></div>
+            <div class="stat-row"><span>Zones</span><span id="stat-zones-mobile">0</span></div>
+            <div class="stat-row"><span>Power</span><span id="stat-power-mobile">0/0</span></div>
+            <div class="stat-row"><span>Resilience</span><span id="stat-resilience-mobile">100%</span></div>
+            <div class="stat-row"><span>Buildings left</span><span id="stat-buildings-mobile">0/0</span></div>
+            <div class="stat-row"><span>Score</span><span id="stat-score-mobile">0</span></div>
+            <div class="stat-row"><span>Casualties</span><span id="stat-casualties-mobile">0</span></div>
+            <div class="stat-row"><span>Injured</span><span id="stat-injured-mobile">0</span></div>
+            <div class="stat-row"><span>Disaster cost</span><span id="stat-disaster-cost-mobile">0</span></div>
+            <div class="stat-row"><span>Harm index</span><span id="stat-disaster-index-mobile">0</span></div>
+            <div class="stat-row"><span>Time</span><span id="stat-time-mobile">15:00</span></div>
+          </div>
+          <div class="disaster-log">
+            <div class="disaster-log-title">Disaster log</div>
+            <ul class="disaster-log-list"></ul>
+          </div>
+        </section>
+      </header>
+
+      <div id="tool-hint-bar" class="tool-hint-bar" aria-live="polite"></div>
+
+      <div id="mobile-cam-bar" class="mobile-only" aria-label="Camera view">
+        <button type="button" class="view-btn" onclick="ui.onCameraView('top')">Top</button>
+        <button type="button" class="view-btn" onclick="ui.onCameraView('isometric')">Iso</button>
+        <button type="button" class="view-btn" onclick="ui.onCameraView('street')">Street</button>
+        <button type="button" class="view-btn" onclick="ui.onCameraView('orbit')">Orbit</button>
+        <span class="cam-hint">Drag to look · pinch zoom · two fingers pan</span>
+      </div>
+
+      <div id="stats-panel" class="container desktop-only hide-on-mobile" aria-hidden="true">
+        <div class="stat-row"><span>Residents</span><span id="stat-residents">0</span></div>
+        <div class="stat-row"><span>Zones</span><span id="stat-zones">0</span></div>
+        <div class="stat-row"><span>Power</span><span id="stat-power">0/0 kW</span></div>
+        <div class="stat-row"><span>Resilience</span><span id="stat-resilience">100%</span></div>
+        <div class="stat-row" title="Buildings still standing versus how many the drill started with.">
+          <span>Buildings left</span><span id="stat-buildings">0/0</span>
         </div>
-        <div class="title-bar-right-items title-bar-items">
-          <img id="population-icon" src="/icons/person.png">
-          <span id="population-counter">0</span>
+        <div class="stat-row"><span>Score</span><span id="stat-score">0</span></div>
+        <div class="stat-row"><span>Casualties</span><span id="stat-casualties">0</span></div>
+        <div class="stat-row"><span>Injured</span><span id="stat-injured">0</span></div>
+        <div class="stat-row"><span>Disaster cost</span><span id="stat-disaster-cost">$0</span></div>
+        <div class="stat-row" title="Harm index is 0–100. Higher is worse: deaths, injuries, damaged zones, and cost.">
+          <span>Harm index</span><span id="stat-disaster-index">0</span>
+        </div>
+        <div class="stat-row time-row"><span>Time</span><span id="stat-time">15:00</span></div>
+        <div class="disaster-log">
+          <div class="disaster-log-title">Disaster log</div>
+          <ul class="disaster-log-list"></ul>
         </div>
       </div>
-      <div id="ui-toolbar" class="container">
-        <button id='button-select' class="ui-button selected" data-type="select"
-          onclick="ui.onToolSelected(event)">
-          <img class="toolbar-icon" src="/icons/select-color.png">
+
+      <div id="mobile-tab-bar" class="mobile-only">
+        <button type="button" class="mobile-tab selected" data-tool="select" onclick="ui.mobileSelectTool('select')">
+          <img src="/icons/select-color.png" alt="" class="mobile-tab-icon">
+          <span>Select</span>
         </button>
-        <button id='button-bulldoze' class="ui-button" data-type="bulldoze"
-          onclick="ui.onToolSelected(event)">
-          <img class="toolbar-icon" src="/icons/bulldozer-color.png">
+        <button type="button" class="mobile-tab" data-tool="build" onclick="ui.toggleMobileBuildSheet()">
+          <img src="/icons/house-color.png" alt="" class="mobile-tab-icon">
+          <span>Build</span>
         </button>
-        <button id='button-residential' class="ui-button" data-type="residential"
-          onclick="ui.onToolSelected(event)">
-          <img class="toolbar-icon" src="/icons/house-color.png">
+        <button type="button" class="mobile-tab" data-tool="road" onclick="ui.mobileSelectTool('road')">
+          <img src="/icons/road-color.png" alt="" class="mobile-tab-icon">
+          <span>Road</span>
         </button>
-        <button id='button-commercial' class="ui-button" data-type="commercial"
-          onclick="ui.onToolSelected(event)">
-          <img class="toolbar-icon" src="/icons/store-color.png">
-        </button>
-        <button id='button-industrial' class="ui-button" data-type="industrial"
-          onclick="ui.onToolSelected(event)">
-          <img class="toolbar-icon" src="/icons/factory-color.png">
-        </button>
-        <button id='button-road' class="ui-button" data-type="road"
-          onclick="ui.onToolSelected(event)">
-          <img class="toolbar-icon" src="/icons/road-color.png">
-        </button>
-        <button id='button-power-plant' class="ui-button" data-type="power-plant"
-          onclick="ui.onToolSelected(event)">
-          <img class="toolbar-icon" src="/icons/power-color.png">
-        </button>
-        <button id='button-power-line' class="ui-button" data-type="power-line"
-        onclick="ui.onToolSelected(event)">
-        <img class="toolbar-icon" src="/icons/power-line-color.png">
-      </button>
-        <button id='button-pause' class="ui-button" onclick="ui.togglePause()">
-          <img id='pause-button-icon' class="toolbar-icon" src="/icons/pause-color.png">
+        <button type="button" class="mobile-tab" data-tool="menu" onclick="ui.toggleMorePanel()">
+          <img src="/icons/menu-color.svg" alt="" class="mobile-tab-icon">
+          <span>Menu</span>
         </button>
       </div>
-      <div id="info-panel" class="container">
+
+      <div id="mobile-build-sheet" class="slide-panel mobile-only" aria-hidden="true">
+        <div class="slide-panel-header">
+          <span>Build</span>
+          <button type="button" class="nav-icon-btn" onclick="ui.toggleMobileBuildSheet(false)">✕</button>
+        </div>
+        <div class="mobile-build-grid">
+          <button type="button" class="build-chip" data-tool="residential" onclick="ui.mobileSelectTool('residential')">
+            <img src="/icons/house-color.png" alt="" class="build-chip-icon"> Residential
+          </button>
+          <button type="button" class="build-chip" data-tool="commercial" onclick="ui.mobileSelectTool('commercial')">
+            <img src="/icons/store-color.png" alt="" class="build-chip-icon"> Commercial
+          </button>
+          <button type="button" class="build-chip" data-tool="industrial" onclick="ui.mobileSelectTool('industrial')">
+            <img src="/icons/factory-color.png" alt="" class="build-chip-icon"> Industrial
+          </button>
+          <button type="button" class="build-chip" data-tool="power-plant-petroleum" onclick="ui.mobileSelectTool('power-plant-petroleum')">
+            <img src="/icons/petroleum-color.svg" alt="" class="build-chip-icon"> Petroleum
+          </button>
+          <button type="button" class="build-chip" data-tool="power-plant-nuclear" onclick="ui.mobileSelectTool('power-plant-nuclear')">
+            <img src="/icons/nuclear-color.svg" alt="" class="build-chip-icon"> Nuclear
+          </button>
+          <button type="button" class="build-chip" data-tool="fire-station" onclick="ui.mobileSelectTool('fire-station')">
+            <img src="/icons/fire-station-color.svg" alt="" class="build-chip-icon"> Fire Station
+          </button>
+          <button type="button" class="build-chip" data-tool="power-line" onclick="ui.mobileSelectTool('power-line')">
+            <img src="/icons/power-line-color.png" alt="" class="build-chip-icon"> Power Line
+          </button>
+          <button type="button" class="build-chip" data-tool="bulldoze" onclick="ui.mobileSelectTool('bulldoze')">
+            <img src="/icons/bulldozer-color.png" alt="" class="build-chip-icon"> Bulldoze
+          </button>
+        </div>
       </div>
-      <div id="instructions">
-        INTERACT - Left Mouse<br>
-        ROTATE - Right Mouse<br>
-        PAN - Control + Right Mouse<br>
-        ZOOM - Scroll
+
+      <div id="game-controls" class="container desktop-toolbar">
+        <div id="ui-toolbar" class="dock-row toolbar-scroll">
+          <button id="button-select" class="ui-button selected" data-type="select" onclick="ui.onToolSelected(event)">
+            <img class="toolbar-icon" src="/icons/select-color.png" alt="Select">
+          </button>
+          <button id="button-bulldoze" class="ui-button" data-type="bulldoze" onclick="ui.onToolSelected(event)">
+            <img class="toolbar-icon" src="/icons/bulldozer-color.png" alt="Bulldoze">
+          </button>
+          <button id="button-residential" class="ui-button" data-type="residential" onclick="ui.onToolSelected(event)">
+            <img class="toolbar-icon" src="/icons/house-color.png" alt="Residential">
+          </button>
+          <button id="button-commercial" class="ui-button" data-type="commercial" onclick="ui.onToolSelected(event)">
+            <img class="toolbar-icon" src="/icons/store-color.png" alt="Commercial">
+          </button>
+          <button id="button-industrial" class="ui-button" data-type="industrial" onclick="ui.onToolSelected(event)">
+            <img class="toolbar-icon" src="/icons/factory-color.png" alt="Industrial">
+          </button>
+          <button id="button-road" class="ui-button" data-type="road" onclick="ui.onToolSelected(event)">
+            <img class="toolbar-icon" src="/icons/road-color.png" alt="Road">
+          </button>
+          <button id="button-power-petroleum" class="ui-button" data-type="power-plant-petroleum" onclick="ui.onToolSelected(event)" title="Petroleum plant (120 kW)">
+            <img class="toolbar-icon" src="/icons/petroleum-color.svg" alt="Petroleum">
+          </button>
+          <button id="button-power-nuclear" class="ui-button" data-type="power-plant-nuclear" onclick="ui.onToolSelected(event)" title="Nuclear plant (280 kW)">
+            <img class="toolbar-icon" src="/icons/nuclear-color.svg" alt="Nuclear">
+          </button>
+          <button id="button-fire-station" class="ui-button" data-type="fire-station" onclick="ui.onToolSelected(event)" title="Fire station">
+            <img class="toolbar-icon" src="/icons/fire-station-color.svg" alt="Fire station">
+          </button>
+          <button id="button-power-line" class="ui-button" data-type="power-line" onclick="ui.onToolSelected(event)">
+            <img class="toolbar-icon" src="/icons/power-line-color.png" alt="Power line">
+          </button>
+          <button id="button-pause" class="ui-button" onclick="ui.togglePause()">
+            <img id="pause-button-icon" class="toolbar-icon" src="/icons/pause-color.png" alt="Pause">
+          </button>
+          <div class="sim-speed-bar" role="group" aria-label="Simulation speed">
+            <button type="button" class="speed-btn selected" data-sim-speed="1" onclick="ui.setSimSpeed(1)">1×</button>
+            <button type="button" class="speed-btn" data-sim-speed="2" onclick="ui.setSimSpeed(2)">2×</button>
+            <button type="button" class="speed-btn" data-sim-speed="5" onclick="ui.setSimSpeed(5)">5×</button>
+          </div>
+          <button id="button-god" class="ui-button toolbar-extra" onclick="ui.toggleGodMode()" title="GOD Mode">
+            <img class="toolbar-icon" src="/icons/god-color.svg" alt="GOD">
+          </button>
+          <button id="button-disaster" class="ui-button toolbar-extra" onclick="ui.onDisaster()" title="Trigger Disaster">
+            <img class="toolbar-icon" src="/icons/disaster-color.svg" alt="Disaster">
+          </button>
+        </div>
+        <button type="button" id="btn-more" class="dock-more-btn" onclick="ui.toggleMorePanel()" aria-label="More actions">More ⋯</button>
       </div>
-      <div id="version">
-        v0.3.0
+
+      <div id="bottom-right-dock" class="desktop-only-dock">
+        <div id="view-buttons" class="view-bar">
+          <span class="dock-label">View</span>
+          <button type="button" class="view-btn" data-view="top" onclick="ui.onCameraView('top')">Top</button>
+          <button type="button" class="view-btn" data-view="isometric" onclick="ui.onCameraView('isometric')">Iso</button>
+          <button type="button" class="view-btn" data-view="street" onclick="ui.onCameraView('street')">Street</button>
+          <button type="button" class="view-btn" data-view="orbit" onclick="ui.onCameraView('orbit')">Orbit</button>
+        </div>
+        <div id="disaster-bar" class="disaster-bar">
+          <span class="dock-label">Disaster</span>
+          <select id="disaster-type-select" class="dock-select" aria-label="Disaster type"></select>
+          <select id="disaster-level-select" class="dock-select" aria-label="Disaster level"></select>
+          <button type="button" class="action-btn small" onclick="ui.onFireDispatch()">Dispatch Fire Crews ($150)</button>
+          <button type="button" class="action-btn small" onclick="ui.onDisaster()">Trigger</button>
+        </div>
+      </div>
+
+      <div id="more-panel" class="slide-panel mobile-slide-panel" aria-hidden="true">
+        <div class="slide-panel-header">
+          <span>Menu</span>
+          <button type="button" class="nav-icon-btn" onclick="ui.toggleMorePanel(false)" aria-label="Close menu">✕</button>
+        </div>
+        <div id="action-bar" class="action-bar-inner">
+          <label class="action-label">Camera View</label>
+          <div class="action-btn-row view-btn-row mobile-view-controls">
+            <button type="button" class="view-btn" onclick="ui.onCameraView('top')">Top</button>
+            <button type="button" class="view-btn" onclick="ui.onCameraView('isometric')">Iso</button>
+            <button type="button" class="view-btn" onclick="ui.onCameraView('street')">Street</button>
+            <button type="button" class="view-btn" onclick="ui.onCameraView('orbit')">Orbit</button>
+          </div>
+          <label class="action-label">Disaster</label>
+          <div class="disaster-select-row">
+            <select id="disaster-type-select-mobile" class="dock-select" aria-label="Disaster type"></select>
+            <select id="disaster-level-select-mobile" class="dock-select" aria-label="Disaster level"></select>
+          </div>
+          <label class="action-label">Template</label>
+          <select id="template-select" onchange="ui.onTemplateChange(event)"></select>
+          <div class="action-btn-row mobile-more-actions">
+            <button type="button" class="action-btn small" onclick="ui.onFireDispatch()">Fire Dispatch</button>
+            <button type="button" class="action-btn small" id="more-btn-god" onclick="ui.toggleGodMode()">GOD Mode</button>
+            <button type="button" class="action-btn small" onclick="ui.onDisaster()">Trigger Disaster</button>
+            <button type="button" class="action-btn small" onclick="ui.togglePause()">Pause</button>
+          </div>
+          <label class="action-label">Speed</label>
+          <div class="action-btn-row">
+            <button type="button" class="speed-btn selected" data-sim-speed="1" onclick="ui.setSimSpeed(1)">1×</button>
+            <button type="button" class="speed-btn" data-sim-speed="2" onclick="ui.setSimSpeed(2)">2×</button>
+            <button type="button" class="speed-btn" data-sim-speed="5" onclick="ui.setSimSpeed(5)">5×</button>
+          </div>
+          <div class="action-btn-row">
+            <button type="button" class="action-btn small" onclick="ui.onExportCity()">Export</button>
+            <button type="button" class="action-btn small" onclick="ui.onImportCity()">Import</button>
+            <button type="button" class="action-btn small" onclick="window.cheatConsole?.toggle()">Console</button>
+          </div>
+          <label class="action-label">Disaster log</label>
+          <ul class="disaster-log-list"></ul>
+        </div>
+      </div>
+
+      <div id="info-panel" class="inspector-panel" aria-hidden="true"></div>
+
+      <div id="instructions" class="help-hint">
+        <strong>Controls</strong><br>
+        Build — Left click / Tap<br>
+        Look around — Right drag / one-finger drag<br>
+        Pan — Ctrl + right drag / two-finger drag<br>
+        Zoom — Scroll / pinch
+      </div>
+
+      <div id="version">Classroom SimCity v1.2</div>
+    </div>
+
+    <input type="file" id="city-import-file" accept="application/json,.json" hidden onchange="ui.onCityFilePicked(event)">
+
+    <div id="cheat-console">
+      <div id="cheat-output">Type help for commands</div>
+      <input id="cheat-input" type="text" placeholder="Enter command..." autocomplete="off">
+    </div>
+
+    <div id="help-panel" class="modal-overlay" style="display:none" onclick="ui.closeHelp()">
+      <div class="modal-panel" onclick="event.stopPropagation()">
+        <h2>Strategy Tips</h2>
+        <ul>
+          <li>Balance RCI zones — residents need jobs and shops nearby.</li>
+          <li>Connect power plants to zones with power lines.</li>
+          <li>Roads must touch zone edges for development.</li>
+          <li>Spread zones to reduce disaster damage concentration.</li>
+          <li>Trade-off: industrial growth vs. resilience and sustainability.</li>
+          <li>Harm index is 0–100 (higher is worse). It rises with people killed, injuries, damaged zones, destroyed roads, and disaster cost.</li>
+          <li>Disasters can strike at random during a session, or you can trigger one from the Disaster panel. Every event is listed in the disaster log.</li>
+        </ul>
+        <div id="ai-tip-box" class="ai-tip-box">
+          <p id="ai-tip-text">Press for a personalized planning tip.</p>
+          <button type="button" class="action-btn small" onclick="ui.fetchAiTip()">AI Tip</button>
+        </div>
+        <button type="button" class="action-btn" onclick="ui.closeHelp()">Close</button>
+      </div>
+    </div>
+
+    <div id="settings-panel" class="modal-overlay" style="display:none" onclick="ui.closeSettings()">
+      <div class="modal-panel settings-panel" onclick="event.stopPropagation()">
+        <h2>Settings</h2>
+        <label class="settings-toggle">
+          <input type="checkbox" id="setting-tutorial-on-start" onchange="ui.onTutorialSettingChange(event)">
+          <span>Show guided tutorial when starting</span>
+        </label>
+        <p class="settings-hint">When enabled, you see a welcome prompt each visit until you finish or skip the tour. Use Replay Guided Tour anytime.</p>
+        <div class="settings-section">
+          <h3>City</h3>
+          <select id="settings-template-select" class="settings-select" onchange="ui.onSettingsTemplateChange(event)"></select>
+          <p class="settings-hint">Cities download as a .json file. A short code like X12345 cannot hold a 16×16 map, and it would be guessable. A restore slip (s123456-K7M2) is a random token stored on the server for your HSU ID only. There is no autosave. Importing someone else’s file is practice only and will not update the leaderboard. The class timer always keeps wall-clock time.</p>
+          <div class="action-btn-row">
+            <button type="button" class="action-btn small" onclick="ui.onExportCity()">Export city file</button>
+            <button type="button" class="action-btn small" onclick="ui.onImportCity()">Import file</button>
+          </div>
+          <p class="settings-hint">Reset wipes the current map. This cannot be undone.</p>
+          <div class="action-btn-row">
+            <button type="button" class="action-btn small danger" onclick="ui.onResetCity()">Reset city</button>
+          </div>
+          <div class="action-btn-row">
+            <button type="button" class="action-btn small" onclick="ui.onIssueRestoreCode()">Issue restore slip</button>
+          </div>
+          <label>Redeem restore slip
+            <input type="text" id="restore-code-input" class="settings-select" placeholder="s123456-K7M2" autocomplete="off">
+          </label>
+          <button type="button" class="action-btn small" onclick="ui.onRedeemRestoreCode()">Redeem my slip</button>
+        </div>
+        <div class="settings-actions">
+          <button type="button" class="action-btn" onclick="ui.replayGuidedTour()">Replay Guided Tour</button>
+          <button type="button" class="action-btn secondary" onclick="ui.closeSettings()">Close</button>
+        </div>
       </div>
     </div>
   </div>

@@ -1,9 +1,8 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import viteConfig from '../../../vite.config.js';
 import models from './models.js';
 
-const baseUrl = viteConfig.base;
+const baseUrl = import.meta.env.BASE_URL || '/';
 
 export class AssetManager {
   textureLoader = new THREE.TextureLoader();
@@ -44,7 +43,12 @@ export class AssetManager {
    * @returns {THREE.Mesh}
    */
   getModel(name, simObject, transparent = false) {
-    const mesh = this.models[name].clone();
+    const source = this.models[name] ?? this.models.grass;
+    if (!source) {
+      console.error(`Model not loaded: ${name}`);
+      return new THREE.Group();
+    }
+    const mesh = source.clone();
 
     // Clone materials so each object has a unique material
     // This is so we can set the modify the texture of each
@@ -110,7 +114,12 @@ export class AssetManager {
         //console.log(`${name} ${(xhr.loaded / xhr.total) * 100}% loaded`);
       },
       (error) => {
-        console.error(error);
+        console.error(`Failed to load model ${name}:`, error);
+        this.models[name] = new THREE.Group();
+        this.loadedModelCount++;
+        if (this.loadedModelCount == this.modelCount) {
+          this.onLoad();
+        }
       });
   }
 }

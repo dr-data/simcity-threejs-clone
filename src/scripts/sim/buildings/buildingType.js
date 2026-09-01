@@ -4,5 +4,8 @@ export const BuildingType = {
   industrial: 'industrial',
   road: 'road',
   powerPlant: 'power-plant',
-  powerLine: 'power-line'
-}
+  powerPlantPetroleum: 'power-plant-petroleum',
+  powerPlantNuclear: 'power-plant-nuclear',
+  fireStation: 'fire-station',
+  powerLine: 'power-line',
+};

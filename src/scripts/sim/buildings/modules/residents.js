@@ -62,6 +62,13 @@ export class ResidentsModule extends SimModule {
     }
   }
 
+  seedOccupants() {
+    if (this.#zone.development.state !== DevelopmentState.developed) return;
+    while (this.#residents.length < this.maximum) {
+      this.#residents.push(new Citizen(this.#zone));
+    }
+  }
+
   /**
    * Evicts all residents from the building
    */
@@ -70,6 +77,32 @@ export class ResidentsModule extends SimModule {
       resident.dispose();
     }
     this.#residents = [];
+  }
+
+  /**
+   * Disaster casualties — removes killed residents, counts injured survivors.
+   * @param {number} fatalRate 0–1 fraction of residents killed
+   * @param {number} injureRate 0–1 fraction of remaining residents injured
+   */
+  applyDisasterCasualties(fatalRate, injureRate) {
+    const total = this.#residents.length;
+    if (total === 0) return { killed: 0, injured: 0 };
+
+    const killTarget = Math.min(total, Math.max(0, Math.round(total * fatalRate)));
+    const shuffled = [...this.#residents].sort(() => Math.random() - 0.5);
+
+    for (let i = 0; i < killTarget; i++) {
+      shuffled[i].dispose();
+    }
+    this.#residents = shuffled.slice(killTarget);
+
+    const remaining = this.#residents.length;
+    const injured = Math.min(
+      remaining,
+      Math.max(0, Math.round(remaining * injureRate))
+    );
+
+    return { killed: killTarget, injured };
   }
 
   /**

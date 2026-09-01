@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { DEG2RAD } from 'three/src/math/MathUtils.js';
 import { DevelopmentModule, DevelopmentState } from '../modules/development.js';
 import { Building } from '../building.js';
+import { DisasterBuildingEffects } from '../../../disaster/disasterAnimations.js';
 
 /**
  * Represents a zoned building such as residential, commercial or industrial
@@ -28,11 +29,20 @@ export class Zone extends Building {
   }
 
   refreshView() {
+    DisasterBuildingEffects.removeEffects(this);
+
     let modelName;
     switch (this.development.state) {
       case DevelopmentState.underConstruction:
       case DevelopmentState.undeveloped:
         modelName = 'under-construction';
+        break;
+      case DevelopmentState.damaged:
+        // Keep developed building model when possible so wreck animation is visible
+        modelName =
+          this.development.level >= 1
+            ? `${this.type}-${this.style}${this.development.level}`
+            : 'under-construction';
         break;
       default:
         modelName = `${this.type}-${this.style}${this.development.level}`;
@@ -40,6 +50,12 @@ export class Zone extends Building {
     }
 
     let mesh = window.assetManager.getModel(modelName, this);
+
+    this.setMesh(mesh);
+
+    if (this.development.state === DevelopmentState.damaged) {
+      DisasterBuildingEffects.applyWreckAppearance(this);
+    }
 
     // Tint building a dark color if it is abandoned
     if (this.development.state === DevelopmentState.abandoned) {
@@ -49,8 +65,6 @@ export class Zone extends Building {
         }
       });
     }
-    
-    this.setMesh(mesh);
   }
 
   simulate(city) {

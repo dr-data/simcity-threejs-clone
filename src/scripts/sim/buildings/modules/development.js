@@ -8,6 +8,7 @@ export const DevelopmentState = {
   developed: 'developed',
   underConstruction: 'under-construction',
   undeveloped: 'undeveloped',
+  damaged: 'damaged',
 };
 
 export class DevelopmentModule extends SimModule {
@@ -17,6 +18,42 @@ export class DevelopmentModule extends SimModule {
    * @type {number}
    */
   #abandonmentCounter = 0;
+
+  /**
+   * Counter for repair progress when damaged
+   * @type {number}
+   */
+  repairCounter = 0;
+
+  /**
+   * Ticks needed to repair (set by disaster severity)
+   * @type {number}
+   */
+  repairTicksNeeded = 5;
+
+  /**
+   * Disaster type that caused damage (for visuals)
+   * @type {string}
+   */
+  damageType = '';
+
+  /**
+   * Disaster level that caused damage
+   * @type {string}
+   */
+  damageLevel = '';
+
+  /**
+   * Wreck pose after disaster (for model animation)
+   * @type {number | null}
+   */
+  damageTilt = null;
+
+  /** @type {number | null} */
+  damageSink = null;
+
+  /** @type {number | null} */
+  damageScaleMul = null;
 
   /**
    * Counter for days under construction
@@ -79,6 +116,11 @@ export class DevelopmentModule extends SimModule {
    * @param {City} city 
    */
   simulate(city) {
+    const tile = city.getTile(this.#zone.x, this.#zone.y);
+    if (tile?.isRadioactive) {
+      return;
+    }
+
     this.#checkAbandonmentCriteria();
 
     switch (this.state) {
@@ -112,6 +154,18 @@ export class DevelopmentModule extends SimModule {
           if (Math.random() < config.modules.development.redevelopChance) {
             this.state = DevelopmentState.developed;
           }
+        }
+        break;
+      case DevelopmentState.damaged:
+        if (++this.repairCounter >= this.repairTicksNeeded) {
+          this.state = DevelopmentState.developed;
+          this.repairCounter = 0;
+          this.damageType = '';
+          this.damageLevel = '';
+          this.damageTilt = null;
+          this.damageSink = null;
+          this.damageScaleMul = null;
+          this.repairTicksNeeded = 5;
         }
         break;
     }

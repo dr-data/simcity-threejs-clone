@@ -1,0 +1,19 @@
+name = "classroom-simcity-api"
+main = "worker/src/index.js"
+compatibility_date = "2026-01-01"
+
+# D1 database (created via Cloudflare MCP / wrangler d1 create)
+[[d1_databases]]
+binding = "DB"
+database_name = "classroom-simcity"
+database_id = "3dbdbfc3-04bb-4ff8-b1ba-293d631fbe3e"
+
+[vars]
+ALLOWED_ORIGIN = "https://classroom-simcity.pages.dev"
+DEV_MODE = "false"
+AI_ENABLED = "true"
+
+# Set via: echo "$(openssl rand -hex 32)" | wrangler secret put SESSION_SECRET
+
+[ai]
+binding = "AI"

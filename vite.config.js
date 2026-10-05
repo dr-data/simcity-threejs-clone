@@ -19,6 +19,7 @@ export default {
         login: './src/login.html',
         leaderboard: './src/leaderboard.html',
         admin: './src/admin.html',
+        teacherNotes: './src/teacher-notes.html',
       },
     },
   },

@@ -67,6 +67,9 @@ export class City extends THREE.Group {
 
     this.services = [];
     this.services.push(new PowerService());
+    this.gridOutageTicks = 0;
+    this.commsOutageTicks = 0;
+    this.waterfrontCutTicks = 0;
     
     this.vehicleGraph = new VehicleGraph(this.size);
     this.debugMeshes.add(this.vehicleGraph);
@@ -268,8 +271,17 @@ export class City extends THREE.Group {
     return { size: this.size, name: this.name, simTime: this.simTime, buildings };
   }
 
+  #tickOutages() {
+    if (this.gridOutageTicks > 0) this.gridOutageTicks -= 1;
+    if (this.commsOutageTicks > 0) this.commsOutageTicks -= 1;
+    if (this.waterfrontCutTicks > 0) this.waterfrontCutTicks -= 1;
+  }
+
   deserialize(data) {
     if (!data) return;
+    this.gridOutageTicks = 0;
+    this.commsOutageTicks = 0;
+    this.waterfrontCutTicks = 0;
     this.name = data.name || this.name;
     this.simTime = data.simTime || 0;
     for (let x = 0; x < this.size; x++) {
@@ -321,6 +333,7 @@ export class City extends THREE.Group {
           this.getTile(x, y).simulate(this);
         }
       }
+      this.#tickOutages();
     }
     this.simTime++;
   }

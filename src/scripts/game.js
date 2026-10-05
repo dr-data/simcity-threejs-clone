@@ -132,6 +132,7 @@ export class Game {
     if (gameConfig.showTutorial) {
       window.ui.maybeShowTutorialWelcome();
     }
+    window.labController?.onCityReady?.();
   }
 
   initialize(city) {
@@ -211,7 +212,10 @@ export class Game {
     const stats = this.city.getSessionStats();
     window.sessionManager?.checkMilestones(stats);
 
-    if (window.sessionManager?.getTimeRemainingMs() <= 0) {
+    if (
+      window.sessionManager?.getTimeRemainingMs() <= 0 &&
+      !window.labController?.isClassActive?.()
+    ) {
       window.sessionManager.endSession(stats);
     }
   }

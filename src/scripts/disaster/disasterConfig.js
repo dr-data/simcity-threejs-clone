@@ -36,6 +36,15 @@ export const DISASTER_TYPES = {
     tint: 0x6699cc,
     area: true,
   },
+  grid: {
+    id: 'grid',
+    label: 'Grid failure',
+    emoji: '⚡',
+    overlay: 'rgba(40,40,40,0.55)',
+    shake: 0.35,
+    tint: 0x222222,
+    area: false,
+  },
   nuclear: {
     id: 'nuclear',
     label: 'Nuclear Meltdown',

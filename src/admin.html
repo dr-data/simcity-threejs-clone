@@ -6,12 +6,37 @@
   <title>Admin — Classroom SimCity</title>
   <link rel="stylesheet" href="/main.css">
 </head>
-<body class="page-body">
+<body class="page-body scroll-page">
   <div class="page-container wide" id="admin-app">
     <h1>Admin Dashboard</h1>
     <p id="admin-status" class="subtitle">Loading...</p>
 
     <div id="admin-content" style="display:none">
+      <section class="lab-admin" id="lab-admin">
+        <h2>Class lab</h2>
+        <p class="settings-hint">One 80-minute class. Students follow the phase and the disaster on their own city. They do not need to log in to record results or write the reflection.</p>
+        <p id="lab-admin-status" class="lab-admin-status">Loading class…</p>
+        <p id="lab-admin-clock" class="lab-admin-clock">—</p>
+        <div class="lab-actions">
+          <button type="button" class="action-btn small" onclick="adminApp.labAction('start')">Start class</button>
+          <button type="button" class="action-btn small" onclick="adminApp.labAction('pause')">Pause</button>
+          <button type="button" class="action-btn small" onclick="adminApp.labAction('resume')">Resume</button>
+          <button type="button" class="action-btn small" onclick="adminApp.labAction('next')">Next phase</button>
+          <button type="button" class="action-btn small secondary" onclick="adminApp.labAction('reset')">Reset</button>
+        </div>
+        <div class="lab-actions" id="lab-admin-phases"></div>
+        <div class="lab-actions">
+          <label>Disaster
+            <select id="lab-admin-type" aria-label="Disaster type"></select>
+          </label>
+          <label>Level
+            <select id="lab-admin-level" aria-label="Disaster level"></select>
+          </label>
+          <button type="button" class="action-btn" onclick="adminApp.labAction('disaster')">Send to class</button>
+        </div>
+        <p class="settings-hint" id="lab-admin-link"></p>
+        <p><a href="/teacher-notes.html">Teacher notes, run sheet, and model answers</a></p>
+      </section>
       <div class="admin-toolbar">
         <input type="search" id="user-search" placeholder="Search HSU ID...">
         <button class="action-btn small" onclick="adminApp.searchUsers()">Search</button>

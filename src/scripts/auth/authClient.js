@@ -78,6 +78,9 @@ export const authClient = {
     request('/api/ai/city-plan', { method: 'POST', body: JSON.stringify(opts) }),
   aiSessionReview: (stats) =>
     request('/api/ai/session-review', { method: 'POST', body: JSON.stringify(stats) }),
+  labState: () => request('/api/lab'),
+  adminSaveLab: (state) =>
+    request('/api/admin/lab', { method: 'POST', body: JSON.stringify({ state }) }),
 };
 
 export function getApiBase() {

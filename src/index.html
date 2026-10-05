@@ -108,7 +108,11 @@
           <div class="header-metrics">
             <span id="budget-counter" class="metric-pill">$5000</span>
             <span id="sim-time" class="metric-pill desktop-only-inline">9/1/2026</span>
-            <span id="stat-time-header" class="metric-pill session-timer">15:00</span>
+            <span id="stat-time-header" class="metric-pill session-timer drill-clock">15:00</span>
+            <button type="button" class="metric-pill header-pop lab-timer-btn" id="lab-timer-btn" title="Class timer">
+              <span id="lab-timer-label">Lab</span>
+              <span id="lab-timer-value">Waiting</span>
+            </button>
             <button type="button" class="metric-pill header-pop" id="population-btn" onclick="ui.toggleCitizenStats()" aria-expanded="false" aria-controls="mobile-stats-strip" title="City stats">
               <img id="population-icon" src="/icons/person.png" alt="">
               <span id="population-counter">0</span>
@@ -144,12 +148,23 @@
             <div class="stat-row"><span>Injured</span><span id="stat-injured-mobile">0</span></div>
             <div class="stat-row"><span>Disaster cost</span><span id="stat-disaster-cost-mobile">0</span></div>
             <div class="stat-row"><span>Harm index</span><span id="stat-disaster-index-mobile">0</span></div>
-            <div class="stat-row"><span>Time</span><span id="stat-time-mobile">15:00</span></div>
+            <div class="stat-row drill-clock"><span>Time</span><span id="stat-time-mobile">15:00</span></div>
           </div>
           <div class="disaster-log">
             <div class="disaster-log-title">Disaster log</div>
             <ul class="disaster-log-list"></ul>
           </div>
+        </section>
+        <section id="lab-metrics-bar" class="lab-metrics-bar" hidden aria-label="Resilience metrics">
+          <button type="button" class="lab-open" id="lab-open-bar">Lab sheet</button>
+          <span class="lab-chip" id="lab-m-power">No power —</span>
+          <span class="lab-chip" id="lab-m-water">No water —</span>
+          <span class="lab-chip" id="lab-m-comms">No comms —</span>
+          <span class="lab-chip" id="lab-m-services">Services —</span>
+          <span class="lab-chip" id="lab-m-recovery">Recovery —</span>
+          <span class="lab-chip" id="lab-m-cost">Cost —</span>
+          <span class="lab-chip lab-chip-who" id="lab-m-who">Most affected —</span>
+          <p id="lab-cascade" class="lab-cascade"></p>
         </section>
       </header>
 
@@ -178,7 +193,7 @@
         <div class="stat-row" title="Harm index is 0–100. Higher is worse: deaths, injuries, damaged zones, and cost.">
           <span>Harm index</span><span id="stat-disaster-index">0</span>
         </div>
-        <div class="stat-row time-row"><span>Time</span><span id="stat-time">15:00</span></div>
+        <div class="stat-row time-row drill-clock"><span>Time</span><span id="stat-time">15:00</span></div>
         <div class="disaster-log">
           <div class="disaster-log-title">Disaster log</div>
           <ul class="disaster-log-list"></ul>
@@ -322,6 +337,11 @@
             <select id="disaster-type-select-mobile" class="dock-select" aria-label="Disaster type"></select>
             <select id="disaster-level-select-mobile" class="dock-select" aria-label="Disaster level"></select>
           </div>
+          <label class="action-label">Class lab</label>
+          <div class="action-btn-row">
+            <button type="button" class="action-btn small" id="lab-open-menu">Lab sheet</button>
+            <button type="button" class="action-btn small" id="lab-report-menu">Report</button>
+          </div>
           <label class="action-label">Template</label>
           <select id="template-select" onchange="ui.onTemplateChange(event)"></select>
           <div class="action-btn-row mobile-more-actions">
@@ -356,7 +376,7 @@
         Zoom — Scroll / pinch
       </div>
 
-      <div id="version">Classroom SimCity v1.2</div>
+      <div id="version">Classroom SimCity v1.3</div>
     </div>
 
     <input type="file" id="city-import-file" accept="application/json,.json" hidden onchange="ui.onCityFilePicked(event)">
@@ -376,7 +396,8 @@
           <li>Spread zones to reduce disaster damage concentration.</li>
           <li>Trade-off: industrial growth vs. resilience and sustainability.</li>
           <li>Harm index is 0–100 (higher is worse). It rises with people killed, injuries, damaged zones, destroyed roads, and disaster cost.</li>
-          <li>Disasters can strike at random during a session, or you can trigger one from the Disaster panel. Every event is listed in the disaster log.</li>
+          <li>During a class, use Lab sheet to record Design A and Design B. The lecturer sends the disaster.</li>
+          <li>Outside a class, disasters can strike at random, or you can trigger one from the Disaster panel. Every event is listed in the disaster log.</li>
         </ul>
         <div id="ai-tip-box" class="ai-tip-box">
           <p id="ai-tip-text">Press for a personalized planning tip.</p>
@@ -417,6 +438,63 @@
         <div class="settings-actions">
           <button type="button" class="action-btn" onclick="ui.replayGuidedTour()">Replay Guided Tour</button>
           <button type="button" class="action-btn secondary" onclick="ui.closeSettings()">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="lab-sheet" class="modal-overlay lab-prose" style="display:none">
+      <div class="modal-panel lab-sheet" role="dialog" aria-labelledby="lab-sheet-title">
+        <h2 id="lab-sheet-title">Lab sheet</h2>
+        <p id="lab-sheet-phase" class="lab-phase-line">Waiting for the lecturer to start the class.</p>
+        <p id="lab-sheet-guide"></p>
+        <div id="lab-metrics-detail" class="lab-metric-grid"></div>
+        <p id="lab-services-detail" class="settings-hint"></p>
+        <div class="lab-actions">
+          <button type="button" class="action-btn" id="lab-record-a">Record Design A</button>
+          <button type="button" class="action-btn" id="lab-record-impact">Record impact</button>
+          <button type="button" class="action-btn" id="lab-record-b">Record Design B</button>
+        </div>
+        <div class="table-wrap">
+          <table id="lab-results-table" class="data-table">
+            <thead>
+              <tr>
+                <th>Row</th>
+                <th>No power</th>
+                <th>No water</th>
+                <th>No comms</th>
+                <th>Services</th>
+                <th>Recovery</th>
+                <th>Cost</th>
+                <th>Most affected</th>
+                <th>Notes</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="lab-compare" class="lab-compare"></p>
+        <div class="lab-actions">
+          <button type="button" class="action-btn" id="lab-csv">Download CSV</button>
+          <button type="button" class="action-btn secondary" id="lab-copy">Copy summary</button>
+          <button type="button" class="action-btn secondary" id="lab-print">Print summary</button>
+          <button type="button" class="action-btn" id="lab-open-report">Report and reflection</button>
+          <button type="button" class="action-btn secondary" id="lab-close">Close</button>
+        </div>
+        <div id="lab-lecturer" class="lab-lecturer" hidden></div>
+      </div>
+    </div>
+
+    <div id="lab-report" class="modal-overlay lab-prose" style="display:none">
+      <div class="modal-panel lab-sheet" role="dialog" aria-labelledby="lab-report-title">
+        <h2 id="lab-report-title">Report and reflection</h2>
+        <p class="settings-hint">Answer on this device. No login. Download or print this with your results table for the written report.</p>
+        <div id="lab-report-fields" class="lab-report-fields"></div>
+        <div class="lab-actions">
+          <button type="button" class="action-btn" id="lab-report-download">Download answers</button>
+          <button type="button" class="action-btn secondary" id="lab-report-copy">Copy report</button>
+          <button type="button" class="action-btn secondary" id="lab-report-print">Print</button>
+          <button type="button" class="action-btn secondary" id="lab-report-close">Close</button>
         </div>
       </div>
     </div>

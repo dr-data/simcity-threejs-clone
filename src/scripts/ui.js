@@ -19,6 +19,7 @@ import { fallbackTip } from './ai/localTip.js';
 import { CITY_SIZE_PRESETS, TIME_PRESETS_MINUTES, LAYOUT_STYLES, getSizePreset, estimateBuildingCount } from './templates/citySizes.js';
 import { generateCityLayout } from './templates/generateCity.js';
 import { bindPairedSelects, readActiveControlValue } from './ui/activeControl.js';
+import { LabController } from './lab/labController.js';
 
 const SIM_START_DATE = gameConfig.simStartDate || '2026-09-01';
 
@@ -189,6 +190,7 @@ export class GameUI {
     if (adminLink) {
       adminLink.style.display = user?.is_admin ? 'inline' : 'none';
     }
+    window.labController?.renderLecturer?.();
   }
 
   setMayorName(name) {
@@ -231,6 +233,7 @@ export class GameUI {
     set('stat-resilience-mobile', `${stats.disasterResilience}%`);
     if (live) set('stat-score-mobile', live.score);
     this.updateDisasterStats();
+    window.labController?.onCityTick?.(city);
   }
 
   updateDisasterStats() {
@@ -760,6 +763,10 @@ export class GameUI {
   }
 
   onDisaster() {
+    if (window.labController?.isClassActive?.() && !this.currentUser?.is_admin) {
+      this.showToast('In this class the lecturer sends the disaster.');
+      return;
+    }
     const type = readActiveControlValue(
       'disaster-type-select',
       'disaster-type-select-mobile'
@@ -879,3 +886,5 @@ window.ui.populateTemplates();
 window.ui.populateDisasterOptions();
 window.ui.initTooltips();
 initTutorial();
+window.labController = new LabController();
+window.labController.start();

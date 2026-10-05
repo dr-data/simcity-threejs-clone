@@ -32,8 +32,9 @@ export class PowerService {
       }
     }
 
-    // If there are no power plants, return early
-    if (powerPlantList.length === 0) {
+    // A grid failure leaves buildings standing but supplies nothing,
+    // so water pumps and communications fail with the power cut.
+    if (city.gridOutageTicks > 0 || powerPlantList.length === 0) {
       return;
     }
 

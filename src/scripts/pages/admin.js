@@ -1,8 +1,24 @@
 import { authClient } from '../auth/authClient.js';
+import { DISASTER_LEVELS, DISASTER_LEVEL_IDS, DISASTER_TYPES, DISASTER_TYPE_IDS } from '../disaster/disasterConfig.js';
+import { formatClock } from '../lab/clock.js';
+import {
+  describeClock,
+  goToPhase,
+  issueDisaster,
+  nextPhase,
+  pauseClass,
+  resetClass,
+  resumeClass,
+  startClass,
+} from '../lab/labState.js';
+import { labSync, preferLabState } from '../lab/labSync.js';
+import { LAB_PHASES } from '../lab/phases.js';
 
 const adminApp = {
   users: [],
   selectedUserId: null,
+  labState: null,
+  labShared: false,
 
   async init() {
     try {
@@ -19,6 +35,10 @@ const adminApp = {
       await this.loadAudit();
       await this.loadClassCode();
       this.bindForm();
+      this.bindLab();
+      await this.loadLab();
+      this._labTimer = setInterval(() => this.renderLabClock(), 1000);
+      this._labPoll = setInterval(() => this.loadLab(), 2500);
     } catch {
       document.getElementById('admin-status').textContent =
         'Please log in first. <a href="/login.html">Login</a>';
@@ -192,6 +212,95 @@ const adminApp = {
       </tr>`
       )
       .join('');
+  },
+
+  bindLab() {
+    const phases = document.getElementById('lab-admin-phases');
+    if (phases) {
+      phases.innerHTML = LAB_PHASES.map(
+        (phase) =>
+          `<button type="button" class="action-btn small secondary" data-phase="${phase.id}">${phase.label} (${phase.range})</button>`
+      ).join('');
+      phases.querySelectorAll('button').forEach((button) => {
+        button.addEventListener('click', () => this.labAction('phase', button.dataset.phase));
+      });
+    }
+    const type = document.getElementById('lab-admin-type');
+    const level = document.getElementById('lab-admin-level');
+    if (type) {
+      type.innerHTML = DISASTER_TYPE_IDS.map(
+        (id) => `<option value="${id}">${DISASTER_TYPES[id].emoji} ${DISASTER_TYPES[id].label}</option>`
+      ).join('');
+      type.value = 'typhoon';
+    }
+    if (level) {
+      level.innerHTML = DISASTER_LEVEL_IDS.map(
+        (id) => `<option value="${id}">${DISASTER_LEVELS[id].label}</option>`
+      ).join('');
+      level.value = 'major';
+    }
+  },
+
+  async loadLab() {
+    try {
+      const incoming = await labSync.fetchState();
+      this.labShared = true;
+      this.labState = preferLabState(this.labState, incoming);
+    } catch {
+      this.labShared = false;
+      this.labState = preferLabState(this.labState, labSync.readLocal());
+    }
+    this.renderLabClock();
+  },
+
+  renderLabClock() {
+    if (!this.labState) return;
+    const view = describeClock(this.labState, Date.now());
+    const status = document.getElementById('lab-admin-status');
+    const clock = document.getElementById('lab-admin-clock');
+    const link = document.getElementById('lab-admin-link');
+    if (status) {
+      status.textContent =
+        view.status === 'idle'
+          ? 'Class not started.'
+          : `${view.phase.label} (${view.phase.range}). ${view.status === 'paused' ? 'Paused.' : ''}`;
+    }
+    if (clock) {
+      clock.textContent =
+        view.status === 'idle'
+          ? '80:00 class'
+          : `${view.phase.short} ${view.status === 'paused' ? 'paused' : formatClock(view.remainingMs)} · ${view.classText}`;
+    }
+    if (link) {
+      link.textContent = this.labShared
+        ? 'Shared with student devices.'
+        : 'Class link not reachable. Controls still work in this browser.';
+    }
+  },
+
+  async labAction(action, phaseId) {
+    const now = Date.now();
+    const current = this.labState || labSync.readLocal();
+    let next = current;
+    if (action === 'start') next = startClass(current, now);
+    if (action === 'pause') next = pauseClass(current, now);
+    if (action === 'resume') next = resumeClass(current, now);
+    if (action === 'next') next = nextPhase(current, now);
+    if (action === 'phase') next = goToPhase(current, phaseId, now);
+    if (action === 'reset') {
+      if (!confirm('Reset the class timer for every student?')) return;
+      next = resetClass(now);
+    }
+    if (action === 'disaster') {
+      const type = document.getElementById('lab-admin-type')?.value || 'typhoon';
+      const level = document.getElementById('lab-admin-level')?.value || 'major';
+      next = issueDisaster(current, { type, level, now, id: `${now}-${type}` });
+    }
+    this.labState = next;
+    const result = await labSync.publish(next);
+    this.labShared = result.shared;
+    this.renderLabClock();
+    await this.loadAudit();
   },
 };
 

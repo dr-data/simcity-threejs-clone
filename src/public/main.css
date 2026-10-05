@@ -1676,3 +1676,288 @@ a {
     max-width: min(380px, 40vw);
   }
 }
+
+/* Class lab: timer, resilience bar, sheet, reflection, teacher notes */
+
+.modal-overlay {
+  pointer-events: auto;
+}
+
+body.lab-active .drill-clock {
+  display: none !important;
+}
+
+.lab-timer-btn {
+  min-height: 32px;
+}
+
+.lab-timer-btn #lab-timer-value {
+  color: #ffcc00;
+  font-weight: 700;
+}
+
+.lab-timer-btn.overtime #lab-timer-value {
+  color: #ffb4a2;
+}
+
+.lab-metrics-bar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px 10px 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+.lab-metrics-bar[hidden] {
+  display: none !important;
+}
+
+.lab-open,
+.lab-prose .action-btn,
+.lab-actions .action-btn {
+  min-height: 44px;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+.lab-chip {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.28);
+  color: #fff;
+  font-size: 0.95rem;
+  line-height: 1.3;
+}
+
+.lab-chip-who {
+  max-width: 100%;
+}
+
+.lab-cascade {
+  flex: 0 1 auto;
+  margin: 0;
+  color: #ffe7a3;
+  font-size: 0.92rem;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.lab-cascade:empty {
+  display: none;
+}
+
+.lab-prose,
+.lab-prose p,
+.lab-prose h2,
+.lab-prose h3,
+.lab-prose td,
+.lab-prose th,
+.lab-prose input,
+.lab-prose textarea,
+.lab-prose select,
+.lab-prose button,
+.doc-page,
+.doc-page p,
+.doc-page li,
+.doc-page h1,
+.doc-page h2,
+.doc-page h3 {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  letter-spacing: 0;
+}
+
+.lab-sheet {
+  width: min(920px, 96vw);
+  max-width: 920px;
+  max-height: min(88vh, 88dvh);
+}
+
+.lab-phase-line {
+  color: #ffe7a3;
+  margin-top: 0;
+}
+
+.lab-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 8px 0 12px;
+}
+
+.lab-stat {
+  background: rgba(0, 0, 0, 0.22);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lab-stat span {
+  color: #c9d7ea;
+  font-size: 0.82rem;
+}
+
+.lab-stat strong {
+  font-size: 1.05rem;
+}
+
+.lab-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.lab-actions label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+
+.lab-compare {
+  color: #d5f5e3;
+}
+
+.lab-lecturer {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+#lab-lecturer[hidden] {
+  display: none !important;
+}
+
+.lab-report-fields label,
+.lab-prompt {
+  display: block;
+  margin: 0 0 12px;
+}
+
+.lab-theme {
+  display: block;
+  color: #9ec5e8;
+  font-size: 0.8rem;
+  margin-bottom: 2px;
+}
+
+.lab-report-fields input,
+.lab-report-fields textarea,
+#lab-results-table input,
+.lab-admin select {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 4px;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(8, 16, 28, 0.45);
+  color: white;
+  font: inherit;
+}
+
+.lab-admin {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 20px;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+.lab-admin h2,
+.lab-admin-clock {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  text-align: left;
+}
+
+.lab-admin-clock {
+  font-size: 1.6rem;
+  color: #ffcc00;
+  margin: 4px 0 8px;
+}
+
+.lab-admin select {
+  min-height: 44px;
+  min-width: 10rem;
+}
+
+html:has(body.scroll-page),
+body.page-body.scroll-page {
+  overflow: auto;
+  height: auto;
+  min-height: 100%;
+}
+
+body.page-body.scroll-page {
+  display: block;
+  padding: 16px 12px 48px;
+}
+
+.doc-page {
+  max-width: 860px;
+  line-height: 1.5;
+}
+
+.doc-page h1,
+.doc-page h2,
+.doc-page h3 {
+  text-align: left;
+}
+
+.doc-kicker {
+  color: #ffcc66;
+  font-weight: 700;
+  margin-bottom: 0;
+}
+
+@media (min-width: 901px) {
+  body.lab-metrics-on {
+    --header-height: 132px;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1200px) {
+  body.lab-metrics-on {
+    --header-height: 188px;
+  }
+}
+
+@media (max-width: 900px) {
+  body.lab-metrics-on {
+    --header-height: 176px;
+  }
+
+  .lab-metrics-bar {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+
+  .lab-cascade {
+    flex: 1 0 100%;
+    white-space: normal;
+  }
+
+  .modal-overlay:has(.lab-sheet) {
+    align-items: flex-start;
+    padding-top: 8px;
+  }
+
+  .lab-metric-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .lab-actions .action-btn {
+    flex: 1 1 calc(50% - 8px);
+  }
+
+  .lab-sheet {
+    width: 96vw;
+    max-height: 86dvh;
+    padding: 16px;
+  }
+}

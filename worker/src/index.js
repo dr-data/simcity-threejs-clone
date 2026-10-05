@@ -25,6 +25,7 @@ import {
 } from './ai.js';
 import { corsHeaders as buildCorsHeaders } from './cors.js';
 import { isHsuId, isLoginId, normalizeHsuId, parseRestoreCode, randomRestoreToken } from './hsu.js';
+import { defaultLabState, sanitizeLabState } from './labState.js';
 
 function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
@@ -125,7 +126,20 @@ export default {
       let response;
 
       // --- Auth ---
-      if ((path === '/api/auth/claim' || path === '/api/auth/signup') && method === 'POST') {
+      if (path === '/api/lab' && method === 'GET') {
+        if (!checkRateLimit(request, 'lab-read', 180)) {
+          response = json({ error: 'Too many requests' }, 429, corsHeaders);
+        } else {
+          let state = defaultLabState();
+          try {
+            const raw = await getSetting(env, 'lab_state', '');
+            if (raw) state = sanitizeLabState(JSON.parse(raw));
+          } catch {
+            state = defaultLabState();
+          }
+          response = json({ state }, 200, corsHeaders);
+        }
+      } else if ((path === '/api/auth/claim' || path === '/api/auth/signup') && method === 'POST') {
         if (!checkRateLimit(request, 'claim', 8)) {
           response = json({ error: 'Too many requests' }, 429);
         } else {
@@ -588,6 +602,19 @@ export default {
             await auditLog(env, user.id, null, 'set_board_code', { code }, null);
             response = json({ ok: true, code }, 200, corsHeaders);
           }
+        } else if (path === '/api/admin/lab' && method === 'POST') {
+          const body = await request.json().catch(() => ({}));
+          const state = sanitizeLabState(body.state || body);
+          await setSetting(env, 'lab_state', JSON.stringify(state));
+          await auditLog(
+            env,
+            user.id,
+            null,
+            'lab_state',
+            { phase: state.phase, status: state.status, disaster: state.disaster?.type || null },
+            null
+          );
+          response = json({ ok: true, state }, 200, corsHeaders);
         } else if (path.match(/^\/api\/admin\/users\/\d+\/reset-lock$/) && method === 'POST') {
           const targetId = parseInt(path.split('/')[4], 10);
           const body = await request.json().catch(() => ({}));

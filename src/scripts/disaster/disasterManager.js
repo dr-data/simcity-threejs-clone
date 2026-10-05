@@ -9,6 +9,7 @@ import {
 import { DisasterAnimationManager } from './disasterAnimations.js';
 import { DisasterAreaSim } from './disasterAreaSim.js';
 import { DisasterConsequences } from './disasterConsequences.js';
+import { applyShock } from '../lab/shocks.js';
 
 /**
  * Disaster scheduling, area effects, and global screen feedback.
@@ -68,11 +69,10 @@ export class DisasterManager {
     this.animations.update();
     this.areaSim.update();
 
-    if (!window.sessionManager?.isActive) return;
-    if (window.ui?.godMode) return;
-    if (this.disasterCount >= this._plannedDisasters) return;
-    if (Date.now() >= this._nextDisasterTime) {
-      this.triggerRandomDisaster();
+    if (!window.labController?.isClassActive?.() && window.sessionManager?.isActive && !window.ui?.godMode) {
+      if (this.disasterCount < this._plannedDisasters && Date.now() >= this._nextDisasterTime) {
+        this.triggerRandomDisaster();
+      }
     }
     if (this.shakeIntensity > 0) {
       this.shakeIntensity *= 0.88;
@@ -104,6 +104,7 @@ export class DisasterManager {
 
     this._playEffects(type, level, 1, typeMeta, levelMeta);
     this.consequences.startEvent({ type, level, source });
+    applyShock(this.game.city, type, level);
 
     let ok = false;
     let messageExtra = '';
@@ -118,6 +119,14 @@ export class DisasterManager {
       case 'typhoon':
         ok = this.areaSim.startTyphoon(level);
         break;
+      case 'grid': {
+        const bill = (levelMeta.cost ?? 200) * 3;
+        this.consequences.repairCost += bill;
+        if (this.consequences.currentEvent) this.consequences.currentEvent.repairCost += bill;
+        ok = true;
+        messageExtra = 'Buildings stay up. Power, water, and communications fail together.';
+        break;
+      }
       case 'earthquake':
         const eq = this.areaSim.runEarthquake(level);
         ok = eq.damaged > 0;

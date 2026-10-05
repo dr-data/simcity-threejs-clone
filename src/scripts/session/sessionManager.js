@@ -106,6 +106,7 @@ export class SessionManager {
 
   tick() {
     if (!this.isActive) return;
+    if (window.labController?.isClassActive?.()) return;
     if (this.getTimeRemainingMs() <= 0) {
       this.endSession(window.game?.city?.getSessionStats() ?? {});
       return;
